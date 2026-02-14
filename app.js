@@ -7,7 +7,6 @@ const ctx = canvas.getContext('2d');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const status = document.getElementById('status');
-const handCount = document.getElementById('handCount');
 const character = document.getElementById('character');
 
 // ======================================================
@@ -161,8 +160,6 @@ function initializeHands() {
 // HAND TRACKING CALLBACK
 // ======================================================
 function onResults(results) {
-    handCount.textContent = results.multiHandLandmarks ? results.multiHandLandmarks.length : 0;
-
     if (video.videoWidth > 0 && video.videoHeight > 0) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -274,7 +271,6 @@ function stopCamera() {
     lastJumpTime = 0;
 
     status.textContent = 'Camera stopped';
-    handCount.textContent = '0';
 
     startBtn.disabled = false;
     stopBtn.disabled = true;
