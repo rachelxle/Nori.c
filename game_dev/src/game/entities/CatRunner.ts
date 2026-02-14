@@ -1,6 +1,6 @@
 /**
  * Cat entity for Runner (Chrome Dino-style) mode.
- * Uses InputProvider ONLY for jump. Pixel-art cat with run animation.
+ * Uses InputProvider ONLY for jump. nori.png sprite with run animation.
  */
 
 import type { InputProvider } from '../../input/InputProvider';
@@ -8,6 +8,7 @@ import { GAME_CONFIG } from '../config';
 
 export class CatRunner {
   public sprite: Phaser.Physics.Arcade.Sprite;
+  public visual: Phaser.GameObjects.Sprite;
   public isDead = false;
   public lives: number;
   public invincibleUntil = 0;
@@ -18,7 +19,6 @@ export class CatRunner {
   private landParticles: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private startY: number;
   private wasGrounded = false;
-  private animTimer = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, input: InputProvider) {
     this.scene = scene;
@@ -32,6 +32,15 @@ export class CatRunner {
     this.sprite.setDisplaySize(40, 40);
     (this.sprite.body as Phaser.Physics.Arcade.Body).allowGravity = true;
     this.sprite.setOrigin(0.5);
+    this.sprite.setVisible(false);
+
+    this.visual = scene.add
+      .sprite(this.sprite.x, this.sprite.y, 'nori')
+      .setOrigin(0.5, 1)
+      .setScale(1.5);
+    if (this.scene.anims.exists('nori_run')) {
+      this.visual.play('nori_run');
+    }
 
     this.setupParticles();
   }
@@ -62,7 +71,7 @@ export class CatRunner {
     return body.blocked.down || body.touching.down;
   }
 
-  update(dt?: number): void {
+  update(_dt?: number): void {
     if (this.isDead) return;
 
     const cfg = GAME_CONFIG.runner;
@@ -83,15 +92,7 @@ export class CatRunner {
       this.sprite.setVelocityY(cfg.maxFallSpeed);
     }
 
-    // Run animation - alternate frames
-    if (grounded) {
-      this.animTimer += dt !== undefined ? dt : 16;
-      if (this.animTimer > 120) {
-        this.animTimer = 0;
-        const frame = this.sprite.texture.key === 'cat_runner' ? 'cat_runner_2' : 'cat_runner';
-        this.sprite.setTexture(frame);
-      }
-    }
+    this.visual.setPosition(this.sprite.x, this.sprite.y);
   }
 
   private emitJumpParticles(): void {
@@ -121,6 +122,7 @@ export class CatRunner {
   destroy(): void {
     this.jumpParticles?.destroy();
     this.landParticles?.destroy();
+    this.visual.destroy();
     this.sprite.destroy();
   }
 }

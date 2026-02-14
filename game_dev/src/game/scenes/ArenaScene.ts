@@ -7,9 +7,9 @@ import { GAME_CONFIG } from '../config';
 import { Progression } from '../state/Progression';
 import { Palette } from '../art/Palette';
 import { CatArena } from '../entities/CatArena';
-import { Boss, BossState } from '../entities/Boss';
 import { ProjectileEntity } from '../entities/Projectile';
 import { Combat } from '../systems/Combat';
+import { Boss, BossState } from '../entities/Boss';
 import { KeyboardInput } from '../../input/KeyboardInput';
 import type { InputProvider } from '../../input/InputProvider';
 
@@ -29,6 +29,8 @@ export class ArenaScene extends Phaser.Scene {
   private dodgeCooldownBar!: Phaser.GameObjects.Graphics;
   private gameOver = false;
   private victoryOverlay: Phaser.GameObjects.Container | null = null;
+  private currentBossSound: Phaser.Sound.BaseSound | null = null;
+  private bossTauntIndex = 0;
 
   constructor() {
     super({ key: 'Arena' });
@@ -105,6 +107,32 @@ export class ArenaScene extends Phaser.Scene {
     this.tweens.add({ targets: bossTitle, alpha: 0, duration: 1200, delay: 400 });
   }
 
+  private stopBossAudio(): void {
+    if (this.currentBossSound && this.currentBossSound.isPlaying) {
+      this.currentBossSound.stop();
+      this.currentBossSound = null;
+    }
+  }
+
+  private playBossAudioOnTransition(from: BossState, to: BossState): void {
+    if (from === to) return;
+    this.stopBossAudio();
+    if (to === BossState.PHASE2) {
+      const s = this.sound.add('boss_phase2', { volume: 1 });
+      this.currentBossSound = s;
+      s.play();
+      return;
+    }
+    if (to === BossState.TELEGRAPH) {
+      const taunts = ['boss_taunt', 'boss_prediction', 'boss_toosoon', 'boss_learn'] as const;
+      const key = taunts[this.bossTauntIndex % taunts.length];
+      this.bossTauntIndex++;
+      const s = this.sound.add(key, { volume: 1 });
+      this.currentBossSound = s;
+      s.play();
+    }
+  }
+
   private createUI(width: number, height: number): void {
     const panelH = 45;
     const g = this.add.graphics();
@@ -174,7 +202,9 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     if (this.boss.state !== BossState.DEAD) {
+      const prevState = this.boss.state;
       this.boss.update(time);
+      this.playBossAudioOnTransition(prevState, this.boss.state);
     }
 
     for (const p of this.boss.projectiles) {

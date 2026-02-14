@@ -6,15 +6,18 @@
 import Phaser from 'phaser';
 import { GAME_CONFIG } from './game/config';
 import { BootScene } from './game/scenes/BootScene';
+import { StoryIntroScene } from './game/scenes/StoryIntroScene';
 import { MainMenuScene } from './game/scenes/MainMenuScene';
 import { RunnerScene } from './game/scenes/RunnerScene';
 import { ArenaScene } from './game/scenes/ArenaScene';
 import { GameOverScene } from './game/scenes/GameOverScene';
 import { VictoryScene } from './game/scenes/VictoryScene';
 import { KeyboardInput } from './input/KeyboardInput';
+import { VisionEventInput } from './input/VisionEventInput';
+import { HybridInput } from './input/HybridInput';
 
-// Shared input provider (optional - can create per-scene)
-const inputProvider = new KeyboardInput();
+// Shared input provider: keyboard + vision (hand jump). Keyboard always works.
+const inputProvider = new HybridInput(new KeyboardInput(), new VisionEventInput());
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -38,7 +41,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, MainMenuScene, RunnerScene, ArenaScene, GameOverScene, VictoryScene],
+  scene: [BootScene, StoryIntroScene, MainMenuScene, RunnerScene, ArenaScene, GameOverScene, VictoryScene],
 };
 
 const game = new Phaser.Game(config);
