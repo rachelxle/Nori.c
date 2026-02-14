@@ -45,21 +45,21 @@ export class StoryIntroScene extends Phaser.Scene {
     g.strokeRoundedRect(cx - 200, 60, 400, 300, 8);
     g.setScrollFactor(0);
 
-    const nori = this.add
-      .sprite(cx, 160, 'nori')
-      .setOrigin(0.5, 1)
-      .setScale(1.5);
-    if (this.anims.exists('nori_run')) {
-      nori.play('nori_run');
-    }
-
-    this.dialogueText = this.add.text(cx, 240, '', {
+    this.dialogueText = this.add.text(cx, 150, '', {
       fontSize: '18px',
       fontFamily: 'PixelFont',
       color: hex(Palette.darkOutline),
       wordWrap: { width: 360 },
       align: 'center',
     }).setOrigin(0.5);
+
+    const nori = this.add
+      .sprite(cx, 260, 'nori')
+      .setOrigin(0.5, 1)
+      .setScale(1.5);
+    if (this.anims.exists('nori_run')) {
+      nori.play('nori_run');
+    }
 
     this.add.text(cx, 320, 'SPACE to continue  |  SHIFT to skip', {
       fontSize: '12px',
