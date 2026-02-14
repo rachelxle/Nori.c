@@ -40,6 +40,7 @@ export const GAME_CONFIG = {
       hp: 100,
       attackDamage: 10,
       attackCooldown: 350,
+      projectileSpeed: 450,
       blockReduction: 0.7,   // 70% damage reduction when blocking
       moveSpeed: 280,
       jumpForce: -400,

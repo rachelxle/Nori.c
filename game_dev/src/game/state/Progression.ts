@@ -6,7 +6,7 @@ import { GAME_CONFIG } from '../config';
 
 const STORAGE_KEY = 'sillycon_best_level';
 
-export const MAX_LEVEL = 5;
+export const MAX_LEVEL = 1;
 
 export interface RunnerTuning {
   scrollSpeed: number;

@@ -80,7 +80,7 @@ export class MainMenuScene extends Phaser.Scene {
     });
     startBtn.on('pointerdown', () => this.startGame());
 
-    this.add.text(cx, 420, 'Runner: Jump = Space/W/Up\nArena: Move = A/D, Attack = J/Space, Block = K, Dodge = W/Up', {
+    this.add.text(cx, 420, 'Runner: Jump = Space/W/Up\nArena: Move = A/D, Shoot = Space, Block = K, Dodge = W/Up', {
       fontSize: '14px',
       fontFamily: 'PixelFont',
       color: hex(StartUI.controls),

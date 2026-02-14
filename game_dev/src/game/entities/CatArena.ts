@@ -16,7 +16,6 @@ export class CatArena {
   public dodgeEndTime = 0;
   public dodgeCooldownUntil = 0;
   public attackCooldownUntil = 0;
-  public attackHitbox: Phaser.GameObjects.Rectangle | null = null;
 
   private input: InputProvider;
   private scene: Phaser.Scene;
@@ -37,7 +36,7 @@ export class CatArena {
     this.sprite.setDisplaySize(40, 40);
   }
 
-  update(time: number): { attacking: boolean; damage: number } | null {
+  update(time: number): { shoot: boolean; damage: number } | null {
     const cfg = GAME_CONFIG.arena.player;
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
 
@@ -74,28 +73,10 @@ export class CatArena {
 
     if (this.input.attackPressed() && time >= this.attackCooldownUntil) {
       this.attackCooldownUntil = time + cfg.attackCooldown;
-      return { attacking: true, damage: cfg.attackDamage };
+      return { shoot: true, damage: cfg.attackDamage };
     }
 
     return null;
-  }
-
-  startAttack(): void {
-    const dir = this.sprite.flipX ? -1 : 1;
-    const hitbox = this.scene.add.rectangle(
-      this.sprite.x + dir * 35,
-      this.sprite.y,
-      30,
-      35,
-      0xff0000,
-      0.3
-    );
-    this.scene.physics.add.existing(hitbox, true);
-    this.attackHitbox = hitbox;
-    this.scene.time.delayedCall(150, () => {
-      hitbox.destroy();
-      this.attackHitbox = null;
-    });
   }
 
   getBlockReduction(): number {

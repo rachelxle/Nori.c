@@ -146,7 +146,7 @@ export class ArenaScene extends Phaser.Scene {
     this.add.text(25, 18, 'Player HP', { fontSize: '14px', fontFamily: 'monospace', color: hex(Palette.darkOutline) }).setScrollFactor(0).setDepth(11);
     this.add.text(width - 180, 18, 'Boss HP', { fontSize: '14px', fontFamily: 'monospace', color: hex(Palette.darkOutline) }).setScrollFactor(0).setDepth(11);
     this.add.text(width / 2 - 60, 18, 'Dodge', { fontSize: '12px', fontFamily: 'monospace', color: hex(Palette.darkOutline) }).setScrollFactor(0).setDepth(11);
-    this.add.text(width / 2, height - 25, 'Move: A/D  Attack: J/Space  Block: K  Dodge: W/Up', { fontSize: '12px', fontFamily: 'monospace', color: hex(Palette.darkOutline) }).setOrigin(0.5).setScrollFactor(0).setDepth(11);
+    this.add.text(width / 2, height - 25, 'Move: A/D  Shoot: Space  Block: K  Dodge: W/Up', { fontSize: '12px', fontFamily: 'monospace', color: hex(Palette.darkOutline) }).setOrigin(0.5).setScrollFactor(0).setDepth(11);
   }
 
   private updateHUD(): void {
@@ -185,20 +185,18 @@ export class ArenaScene extends Phaser.Scene {
     const time = this.time.now;
 
     const attackResult = this.cat.update(time);
-    if (attackResult?.attacking) {
-      this.cat.startAttack();
-      this.time.delayedCall(75, () => {
-        if (this.cat.attackHitbox && this.boss.state !== BossState.DEAD) {
-          const hit = this.physics.overlap(
-            this.cat.attackHitbox.body as Phaser.Physics.Arcade.Body,
-            this.boss.sprite.body as Phaser.Physics.Arcade.Body
-          );
-          if (hit) {
-            this.boss.takeDamage(attackResult.damage);
-            this.cameras.main.shake(80, 0.003);
-          }
-        }
-      });
+    if (attackResult?.shoot && this.boss.state !== BossState.DEAD) {
+      const speed = GAME_CONFIG.arena.player.projectileSpeed;
+      const proj = new ProjectileEntity(
+        this,
+        this.cat.sprite.x + 25,
+        this.cat.sprite.y - 10,
+        speed,
+        0,
+        attackResult.damage,
+        false
+      );
+      this.projectiles.push(proj);
     }
 
     if (this.boss.state !== BossState.DEAD) {
@@ -215,25 +213,33 @@ export class ArenaScene extends Phaser.Scene {
 
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       const p = this.projectiles[i];
-      if (p.fromBoss && this.physics.overlap(p.sprite, this.cat.sprite)) {
-        if (!this.cat.isDodging && !this.cat.isInvincible) {
-          Combat.applyDamage(
-            this.cat,
-            p.damage,
-            p.sprite.x,
-            p.sprite.y,
-            this,
-            { knockback: true, blockReduction: this.cat.getBlockReduction() }
-          );
-        }
-        p.destroy();
-        this.projectiles.splice(i, 1);
-        this.boss.projectiles = this.boss.projectiles.filter((x) => x !== p);
-      }
       if (p.sprite.x < -50 || p.sprite.x > GAME_CONFIG.width + 50) {
         p.destroy();
         this.projectiles.splice(i, 1);
-        this.boss.projectiles = this.boss.projectiles.filter((x) => x !== p);
+        if (p.fromBoss) this.boss.projectiles = this.boss.projectiles.filter((x) => x !== p);
+        continue;
+      }
+      if (p.fromBoss) {
+        if (this.physics.overlap(p.sprite, this.cat.sprite)) {
+          if (!this.cat.isDodging && !this.cat.isInvincible) {
+            Combat.applyDamage(
+              this.cat,
+              p.damage,
+              p.sprite.x,
+              p.sprite.y,
+              this,
+              { knockback: true, blockReduction: this.cat.getBlockReduction() }
+            );
+          }
+          p.destroy();
+          this.projectiles.splice(i, 1);
+          this.boss.projectiles = this.boss.projectiles.filter((x) => x !== p);
+        }
+      } else if (this.physics.overlap(p.sprite, this.boss.sprite) && this.boss.state !== BossState.DEAD) {
+        this.boss.takeDamage(p.damage);
+        this.cameras.main.shake(80, 0.003);
+        p.destroy();
+        this.projectiles.splice(i, 1);
       }
     }
 

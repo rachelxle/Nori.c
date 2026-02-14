@@ -47,24 +47,20 @@ export class StoryIntroScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(400);
 
-    // Background: sky
-    const sky = this.add.graphics();
-    sky.fillStyle(Palette.sky, 1);
-    sky.fillRect(0, 0, width, height);
-    sky.setScrollFactor(0);
-
-    // Ground: grass
-    const groundH = 80;
-    const groundG = this.add.graphics();
-    groundG.fillStyle(Palette.nearGrass, 1);
-    groundG.fillRect(0, height - groundH, width + 100, groundH);
-    groundG.fillStyle(Palette.darkDirt, 1);
-    for (let x = 0; x < width + 100; x += 16) {
-      groundG.fillRect(x, height - groundH + 8, 8, 8);
+    // Background: intro image (cover whole screen, aspect-ratio preserved)
+    if (this.textures.exists('intro_background')) {
+      const bg = this.add.image(width / 2, height / 2, 'intro_background').setDepth(-10);
+      const scaleX = width / bg.width;
+      const scaleY = height / bg.height;
+      bg.setScale(Math.max(scaleX, scaleY));
+    } else {
+      const sky = this.add.graphics();
+      sky.fillStyle(Palette.sky, 1);
+      sky.fillRect(0, 0, width, height);
+      sky.setScrollFactor(0);
     }
-    groundG.setScrollFactor(0);
 
-    
+    const groundH = 80;
 
     // Left cat: Nori (orange, normal)
     const leftCatY = height - groundH + 130;
@@ -255,7 +251,7 @@ export class StoryIntroScene extends Phaser.Scene {
     this.input.keyboard?.off('keydown-SHIFT', this.onShift, this);
     this.cameras.main.fadeOut(400);
     this.time.delayedCall(450, () => {
-      this.scene.start('Runner', { level: 1 });
+      this.scene.start('MainMenu');
     });
   }
 }

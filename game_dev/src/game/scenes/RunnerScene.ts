@@ -19,6 +19,7 @@ export class RunnerScene extends Phaser.Scene {
   private score = 0;
   private runnerTuning = Progression.getRunnerTuning(1);
   private scoreText!: Phaser.GameObjects.Text;
+  private heartSprites: Phaser.GameObjects.Image[] = [];
   private levelClearedOverlay: Phaser.GameObjects.Container | null = null;
   private groundY = 0;
   private scoreParticles: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
@@ -135,6 +136,20 @@ export class RunnerScene extends Phaser.Scene {
       color: hex(Palette.darkOutline),
     }).setScrollFactor(0).setDepth(11);
 
+    // Hearts (top right) - 3 hearts, right-aligned
+    const heartSize = 20;
+    const heartSpacing = 24;
+    const heartsStartX = width - 20;
+    for (let i = 0; i < GAME_CONFIG.runner.lives; i++) {
+      const heart = this.add
+        .image(heartsStartX - i * heartSpacing, 35, 'particle_heart')
+        .setScrollFactor(0)
+        .setDepth(11)
+        .setDisplaySize(heartSize, heartSize)
+        .setOrigin(1, 0.5);
+      this.heartSprites.push(heart);
+    }
+
     this.add.text(width / 2, height - 20, 'Jump: Space / W / Up', {
       fontSize: '14px',
       fontFamily: 'monospace',
@@ -158,11 +173,19 @@ export class RunnerScene extends Phaser.Scene {
     if (this.cat.isDead) return;
     if (this.time.now < this.cat.invincibleUntil) return;
     this.cat.die(this.time.now);
+    this.updateHeartsUI();
     if (this.cat.isDead) {
       this.goGameOver();
-    } else {
-      this.scoreText.setText(`Score: ${this.score} | Lives: ${this.cat.lives}`);
     }
+  }
+
+  private updateHeartsUI(): void {
+    const lives = this.cat.lives;
+    const maxLives = GAME_CONFIG.runner.lives;
+    this.heartSprites.forEach((heart, i) => {
+      // Rightmost heart = last life; leftmost = first life. Dim from right.
+      heart.setAlpha(lives >= maxLives - i ? 1 : 0.3);
+    });
   }
 
   private completeLevel(): void {
