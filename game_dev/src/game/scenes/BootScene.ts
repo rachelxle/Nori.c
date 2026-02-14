@@ -14,6 +14,17 @@ export class BootScene extends Phaser.Scene {
       frameWidth: 64,
       frameHeight: 64,
     });
+
+    this.load.spritesheet('nori-idle', 'assets/sprites/nori-idle.png', {
+      frameWidth: 64,
+      frameHeight: 64
+    });
+
+    this.load.spritesheet('uni-idle', 'assets/sprites/uni-idle.png', {
+      frameWidth: 64,
+      frameHeight: 64
+    });
+
     // Intro cutscene voice lines
     for (let i = 1; i <= 6; i++) {
       this.load.audio(`intro_0${i}`, `audio/intro_0${i}.mp3`);
@@ -39,6 +50,21 @@ export class BootScene extends Phaser.Scene {
         repeat: -1,
       });
     }
+
+    this.anims.create({
+      key: 'nori-idle',
+      frames: this.anims.generateFrameNumbers('nori-idle', { start: 0, end: 5 }),
+      frameRate: 6,
+      repeat: -1
+    });
+
+    this.anims.create({
+      key: 'uni-idle',
+      frames: this.anims.generateFrameNumbers('uni-idle', { start: 0, end: 5 }),
+      frameRate: 6,
+      repeat: -1
+    });
+
 
     this.scene.start('StoryIntro');
   }

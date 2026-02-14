@@ -64,35 +64,25 @@ export class StoryIntroScene extends Phaser.Scene {
     }
     groundG.setScrollFactor(0);
 
+    
 
     // Left cat: Nori (orange, normal)
-    const leftCatY = height - groundH + 5;
+    const leftCatY = height - groundH + 130;
     this.leftCat = this.add
-    .sprite(160, leftCatY, 'nori')
+    .sprite(160, leftCatY, 'nori-idle')
     .setOrigin(0.5, 1)
-    .setScale(1.5);
+    .setScale(5);
 
-    if (this.anims.exists('nori_run')) {
-    this.leftCat.play('nori_run');
-    }
+   
+    this.leftCat.play('nori-idle');
 
     // Right cat: evil (dark tint, bigger, red eyes)
     this.rightCat = this.add
-    .sprite(640, leftCatY, 'nori')
+    .sprite(640, leftCatY, 'uni-idle')
     .setOrigin(0.5, 1)
-    .setScale(1.7)
-    .setTint(0x111111);
+    .setScale(5)
 
-    if (this.anims.exists('nori_run')) {
-      this.rightCat.play('nori_run');
-    }
-
-    // Red eyes (positioned on head)
-    const eye1 = this.add.rectangle(this.rightCat.x - 8, this.rightCat.y - 50, 6, 4, Palette.warningRed);
-    const eye2 = this.add.rectangle(this.rightCat.x + 8, this.rightCat.y - 50, 6, 4, Palette.warningRed);
-    eye1.setDepth(1000);
-    eye2.setDepth(1000);
-
+    this.rightCat.play('uni-idle');
 
     // Speech bubble container (drawn per line)
     this.bubbleGraphics = this.add.graphics();
@@ -144,7 +134,7 @@ export class StoryIntroScene extends Phaser.Scene {
     const radius = 8;
 
     // bubble sits near the speaker
-    const y = 80;
+    const y = 270;
 
     let x = speaker.x - bubbleW / 2;
     x = Phaser.Math.Clamp(x, 20, width - bubbleW - 20);
