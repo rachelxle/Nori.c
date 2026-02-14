@@ -8,25 +8,31 @@
 </head>
 <body>
     <div class="container">
-        <h1>Hand Tracking Motion Detection</h1>
         <div class="video-container">
             <video id="video" autoplay playsinline></video>
             <canvas id="canvas"></canvas>
         </div>
-        <div class="controls">
-            <button id="startBtn">Start Camera</button>
-            <button id="stopBtn" disabled>Stop Camera</button>
-            <div class="status" id="status">Ready to start</div>
-        </div>
-        <div class="info">
-            <p>Hand landmarks detected: <span id="handCount">0</span></p>
+        <div class="main-content">
+            <h1>Hand Tracking Motion Detection</h1>
+            <div class="controls">
+                <button id="startBtn">Start Camera</button>
+                <button id="stopBtn" disabled>Stop Camera</button>
+                <div class="status" id="status">Ready to start</div>
+            </div>
+            <div class="info">
+                <p>Hand landmarks detected: <span id="handCount">0</span></p>
+            </div>
+            <div class="character-container">
+                <div id="character" class="character"></div>
+                <div class="ground"></div>
+            </div>
         </div>
     </div>
     
     <!-- MediaPipe Hands -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <script src="app.js"></script>
 </body>
 </html>
