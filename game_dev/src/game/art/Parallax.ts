@@ -60,16 +60,18 @@ export function createClouds(scene: Phaser.Scene, count: number): Phaser.GameObj
   g.generateTexture('cloud', 24, 12);
   g.destroy();
 
-  const { width } = scene.scale;
+  const { width, height } = scene.scale;
   for (let i = 0; i < count; i++) {
     const c = scene.add.image(
       Math.random() * width,
-      50 + Math.random() * 80,
+      40 + Math.random() * (height * 0.35),
       'cloud'
     );
-    c.setScrollFactor(0.2);
+    c.setScrollFactor(0.15);
     c.setDepth(-1.5);
-    c.setAlpha(0.9);
+    c.setAlpha(0.92);
+    const scale = 0.8 + Math.random() * 0.8;
+    c.setScale(scale);
     clouds.push(c);
   }
   return clouds;

@@ -55,7 +55,7 @@ export class StoryIntroScene extends Phaser.Scene {
 
     this.dialogueText = this.add.text(cx, 240, '', {
       fontSize: '18px',
-      fontFamily: 'monospace',
+      fontFamily: 'PixelFont',
       color: hex(Palette.darkOutline),
       wordWrap: { width: 360 },
       align: 'center',
@@ -63,7 +63,7 @@ export class StoryIntroScene extends Phaser.Scene {
 
     this.add.text(cx, 320, 'SPACE to continue  |  SHIFT to skip', {
       fontSize: '12px',
-      fontFamily: 'monospace',
+      fontFamily: 'PixelFont',
       color: hex(Palette.goldScore),
     }).setOrigin(0.5);
 

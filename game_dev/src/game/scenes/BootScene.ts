@@ -10,6 +10,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    this.load.image('runner_background', 'assets/background.png');
     this.load.spritesheet('nori', 'assets/sprites/nori.png', {
       frameWidth: 64,
       frameHeight: 64,
@@ -40,6 +41,14 @@ export class BootScene extends Phaser.Scene {
       });
     }
 
-    this.scene.start('StoryIntro');
+    // Wait for PixelFont to load so start/intro/game-over screens use it
+    const startScenes = (): void => {
+      this.scene.start('StoryIntro');
+    };
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.load) {
+      document.fonts.load('16px PixelFont').then(startScenes).catch(startScenes);
+    } else {
+      startScenes();
+    }
   }
 }

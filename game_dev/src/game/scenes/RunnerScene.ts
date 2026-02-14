@@ -9,7 +9,6 @@ import { CatRunner } from '../entities/CatRunner';
 import { ObstacleManager } from '../entities/ObstacleManager';
 import { KeyboardInput } from '../../input/KeyboardInput';
 import { Palette } from '../art/Palette';
-import { createRunnerParallax, createClouds, updateParallax, type ParallaxLayer } from '../art/Parallax';
 import type { InputProvider } from '../../input/InputProvider';
 
 export class RunnerScene extends Phaser.Scene {
@@ -22,8 +21,6 @@ export class RunnerScene extends Phaser.Scene {
   private scoreText!: Phaser.GameObjects.Text;
   private levelClearedOverlay: Phaser.GameObjects.Container | null = null;
   private groundY = 0;
-  private parallaxLayers: ParallaxLayer[] = [];
-  private clouds: Phaser.GameObjects.Image[] = [];
   private scoreParticles: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private lastScroll = 0;
 
@@ -51,9 +48,8 @@ export class RunnerScene extends Phaser.Scene {
 
     this.physics.world.gravity.y = GAME_CONFIG.runner.gravity;
 
-    // Parallax background
-    this.parallaxLayers = createRunnerParallax(this, width, height);
-    this.clouds = createClouds(this, 4);
+    // Your pixel-art landscape background (sky, pink clouds, hills, foliage)
+    this.add.image(width / 2, height / 2, 'runner_background').setDepth(-10).setDisplaySize(width, height);
 
     // Ground - pixel grass + dirt
     const groundHeight = 60;
@@ -203,12 +199,6 @@ export class RunnerScene extends Phaser.Scene {
 
     const speed = this.runnerTuning.scrollSpeed * (dt / 1000);
     this.lastScroll += speed;
-    updateParallax(this.parallaxLayers, speed);
-
-    for (const c of this.clouds) {
-      c.x -= speed * 0.3;
-      if (c.x < -20) c.x = GAME_CONFIG.width + 20;
-    }
 
     const catBody = this.cat.sprite.body as Phaser.Physics.Arcade.Body;
     if (this.obstacleManager.checkOverlap(catBody)) {
