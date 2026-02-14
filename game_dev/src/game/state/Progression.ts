@@ -75,10 +75,9 @@ export class Progression {
     };
   }
 
-  /** Boss visual scale per level: 1 = small, 5 = very large. */
+  /** Boss visual scale - large and stagnant. */
   static getBossScale(level: number): number {
-    const l = Math.min(MAX_LEVEL, Math.max(1, level));
-    return 0.8 + (l - 1) * 0.3;  // 0.8, 1.1, 1.4, 1.7, 2.0
+    return 2.5;
   }
 
   static getArenaParams(level: number): ArenaParams {

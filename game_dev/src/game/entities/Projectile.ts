@@ -22,7 +22,10 @@ export class ProjectileEntity {
     this.sprite = scene.physics.add.sprite(x, y, 'projectile');
     this.sprite.setVelocity(vx, vy);
     this.sprite.setCollideWorldBounds(false);
-    (this.sprite.body as Phaser.Physics.Arcade.Body).allowGravity = false;
+    this.sprite.setDisplaySize(20, 20);
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    body.allowGravity = false;
+    body.setSize(20, 20);
   }
 
   destroy(): void {

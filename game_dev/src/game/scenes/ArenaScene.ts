@@ -87,7 +87,7 @@ export class ArenaScene extends Phaser.Scene {
     this.physics.add.collider(this.cat.sprite, ground);
 
     const bossScale = Progression.getBossScale(this.level);
-    this.boss = new Boss(this, width - 120, height - 80, this.cat, this.arenaParams, bossScale);
+    this.boss = new Boss(this, width - 140, height - 100, this.cat, this.arenaParams, bossScale);
     this.physics.add.collider(this.boss.sprite, ground);
     this.physics.add.collider(this.boss.sprite, this.cat.sprite, () => {});
 

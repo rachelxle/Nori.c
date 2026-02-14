@@ -92,35 +92,14 @@ export class Boss {
         }
         break;
 
-      case BossState.IDLE: {
-        if (dt >= this.stateDuration) {
-          this.nextAttack = Phaser.Utils.Array.GetRandom(['volley', 'slam', 'dash']) as BossAttackType;
-          this.setState(BossState.TELEGRAPH, time);
-        }
+      case BossState.IDLE:
+        // Boss stays stagnant - no attacks, no movement
         break;
-      }
 
-      case BossState.TELEGRAPH: {
-        const telegraphDuration = this.getTelegraphDuration();
-        if (dt >= telegraphDuration) {
-          this.setState(BossState.ATTACK, time);
-          this.clearTelegraph();
-        } else {
-          this.showTelegraph(time);
-        }
-        break;
-      }
-
-      case BossState.ATTACK: {
-        this.executeAttack(time);
-        this.setState(BossState.RECOVER, time);
-        break;
-      }
-
+      case BossState.TELEGRAPH:
+      case BossState.ATTACK:
       case BossState.RECOVER:
-        if (dt >= cfg.recoverDuration) {
-          this.setState(BossState.IDLE, time);
-        }
+        // Disabled - boss is stagnant
         break;
 
       case BossState.DEAD:
