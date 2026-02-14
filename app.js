@@ -1,6 +1,4 @@
-// ======================================================
-// DOM ELEMENTS
-// ======================================================
+
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -9,17 +7,15 @@ const stopBtn = document.getElementById('stopBtn');
 const status = document.getElementById('status');
 const character = document.getElementById('character');
 
-// ======================================================
-// GLOBALS
-// ======================================================
+// MediaPipe and Browser instances for webcam detection
 let camera = null;
 let hands = null;
 let stream = null;
 
-// Gesture state
+// character animations tate
 let currentState = 'normal';
 
-// Smoothing buffers
+// smooths animations
 let smoothedY = null;
 const SMOOTHING_FACTOR = 0.25;
 
@@ -33,11 +29,9 @@ let lastJumpTime = 0;
 
 const DEADZONE = 0.015;
 const FRAME_THRESHOLD = 3;
-const JUMP_COOLDOWN = 1300; // Milliseconds - prevents double jumps (longer than 1.2s animation)
+const JUMP_COOLDOWN = 1300; 
 
-// ======================================================
-// SMOOTHING FUNCTIONS
-// ======================================================
+// stabilize animations for smoothness
 function smoothValue(raw) {
     if (smoothedY === null) smoothedY = raw;
     smoothedY = smoothedY + (raw - smoothedY) * SMOOTHING_FACTOR;
@@ -55,9 +49,8 @@ function getStableY(rawY) {
     return rollingAverage(lowPass);
 }
 
-// ======================================================
-// GESTURE DETECTION
-// ======================================================
+// FINGER GESTURE DETETCTION
+
 function detectFingerMovement(fingerTip) {
     const rawY = fingerTip.y;
     const currentY = getStableY(rawY);
@@ -83,14 +76,14 @@ function detectFingerMovement(fingerTip) {
     }
 
     // Track upward movement
-    if (delta < -DEADZONE) {
+    if (delta < -DEADZONE) { // - delta = moving upwards
         upwardFrames++;
     } else {
         // Reset upward frames if not moving up
         upwardFrames = 0;
     }
 
-    // Trigger jump (with cooldown)
+    // check if upward movement is strong enough to count as a jump
     const now = Date.now();
     if (upwardFrames >= FRAME_THRESHOLD && currentState === 'normal' && (now - lastJumpTime) >= JUMP_COOLDOWN) {
         upwardFrames = 0; // Reset immediately before triggering
@@ -101,16 +94,13 @@ function detectFingerMovement(fingerTip) {
     lastY = currentY;
 }
 
-// ======================================================
-// CHARACTER ACTIONS
-// ======================================================
+// CHARACTER JUMP ANIMATION
+
 function triggerJump() {
     if (currentState === 'jumping') return;
     
-    // Double-check state before proceeding
     if (character.classList.contains('jumping')) return;
 
-    // Set state immediately to prevent double triggers
     currentState = 'jumping';
     
     // Remove any existing animation first
@@ -138,9 +128,9 @@ function triggerJump() {
     }, 1200); // Match animation duration (1.2s)
 }
 
-// ======================================================
-// MEDIAPIPE SETUP
-// ======================================================
+
+// MediaPipe hands initialization
+
 function initializeHands() {
     hands = new Hands({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
@@ -156,9 +146,7 @@ function initializeHands() {
     hands.onResults(onResults);
 }
 
-// ======================================================
-// HAND TRACKING CALLBACK
-// ======================================================
+// Frame processing
 function onResults(results) {
     if (video.videoWidth > 0 && video.videoHeight > 0) {
         canvas.width = video.videoWidth;
@@ -168,22 +156,25 @@ function onResults(results) {
     ctx.save();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // if hands are detected
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const landmarks = results.multiHandLandmarks[0];
 
+        // index finger tip = landmark 8
         if (landmarks.length > 8) {
             const indexFingerTip = landmarks[8];
             detectFingerMovement(indexFingerTip);
         }
 
+        // draw hand skeletons and points
         for (const handLandmarks of results.multiHandLandmarks) {
             drawConnectors(ctx, handLandmarks, HAND_CONNECTIONS, {
-                color: '#00FF00',
+                color: '#00ff00',
                 lineWidth: 2
             });
 
             drawLandmarks(ctx, handLandmarks, {
-                color: '#FF0000',
+                color: '#ff0000',
                 radius: 3
             });
         }
@@ -196,9 +187,7 @@ function onResults(results) {
     ctx.restore();
 }
 
-// ======================================================
-// CAMERA CONTROL
-// ======================================================
+
 async function startCamera() {
     try {
         status.textContent = 'Requesting camera access...';
@@ -276,9 +265,8 @@ function stopCamera() {
     stopBtn.disabled = true;
 }
 
-// ======================================================
-// EVENT LISTENERS
-// ======================================================
+
+
 startBtn.addEventListener('click', startCamera);
 stopBtn.addEventListener('click', stopCamera);
 
