@@ -1,36 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hand Tracking Webcam</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hand Tracking Webcam</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="container">
-        <div class="video-container">
-            <video id="video" autoplay playsinline></video>
-            <canvas id="canvas"></canvas>
-        </div>
-        <div class="main-content">
-            <h1>Hand Tracking Motion Detection</h1>
-            <div class="controls">
-                <button id="startBtn">Start Camera</button>
-                <button id="stopBtn" disabled>Stop Camera</button>
-                <div class="status" id="status">Ready to start</div>
-            </div>
-            <div class="character-container">
-                <div id="character" class="character"></div>
-                <div class="ground"></div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="video-container">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas"></canvas>
     </div>
-    
-    <!-- MediaPipe Hands -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-    <script src="app.js"></script>
+
+    <div class="main-content">
+      <h1>Hand Tracking Motion Detection</h1>
+
+      <div class="controls">
+        <button id="startBtn">Start Camera</button>
+        <button id="stopBtn" disabled>Stop Camera</button>
+        <div class="status" id="status">Ready to start</div>
+      </div>
+
+      <div class="character-container">
+        <!-- cat sprite -->
+        <div id="character" class="character nori-sprite"></div>
+        <div class="ground"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MediaPipe Hands -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="app.js"></script>
 </body>
 </html>
-
