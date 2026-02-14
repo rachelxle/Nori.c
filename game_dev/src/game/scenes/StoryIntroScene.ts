@@ -1,6 +1,7 @@
 /**
- * Story intro: cutscene with 6 dialogue lines and MP3 voice.
- * intro_01..intro_06 play per line. SPACE advances when done. SHIFT skips and stops audio.
+ * Story intro: 2-cat cutscene with dialogue and MP3 voice.
+ * Left: Nori (orange). Right: evil cat (dark, red eyes).
+ * Speech bubbles alternate by speaker. SPACE to begin/advance. SHIFT to skip.
  */
 
 import Phaser from 'phaser';
@@ -12,16 +13,25 @@ function hex(color: number): string {
 }
 
 const DIALOGUE: { text: string; audioKey: string }[] = [
-  { text: 'Another day in the arena...', audioKey: 'intro_01' },
-  { text: 'The bosses grow stronger with each level.', audioKey: 'intro_02' },
-  { text: 'But Nori has trained hard.', audioKey: 'intro_03' },
-  { text: 'Jump over obstacles. Fight the boss.', audioKey: 'intro_04' },
-  { text: 'Can you defeat all five?', audioKey: 'intro_05' },
-  { text: 'Nori is ready to run!', audioKey: 'intro_06' },
+  { text: 'In a world where cats once lived in harmony...', audioKey: 'intro_01' },
+  { text: 'One cat sought power beyond imagination.', audioKey: 'intro_02' },
+  { text: 'But one brave orange cat refused to surrender.', audioKey: 'intro_03' },
+  { text: 'The arena awaits.', audioKey: 'intro_04' },
+  { text: 'Learn. Adapt. Survive.', audioKey: 'intro_05' },
+  { text: 'The battle begins now.', audioKey: 'intro_06' },
 ];
 
+const BUBBLE_FILL = 0xfff1e8;
+const BUBBLE_OUTLINE = 0x2b2b2b;
+
 export class StoryIntroScene extends Phaser.Scene {
+  private started = false;
+  private startHint!: Phaser.GameObjects.Text;
   private dialogueText!: Phaser.GameObjects.Text;
+  private bubbleGraphics!: Phaser.GameObjects.Graphics;
+  private startHintTween?: Phaser.Tweens.Tween;
+  private leftCat!: Phaser.GameObjects.Sprite;
+  private rightCat!: Phaser.GameObjects.Sprite;
   private lineIndex = 0;
   private typedLength = 0;
   private currentSound: Phaser.Sound.BaseSound | null = null;
@@ -29,60 +39,154 @@ export class StoryIntroScene extends Phaser.Scene {
   private typingEvent: Phaser.Time.TimerEvent | null = null;
 
   constructor() {
-    super({ key: 'StoryIntro' });
+    super('StoryIntro');
   }
 
   create(): void {
-    const { width } = GAME_CONFIG;
-    const cx = width / 2;
+    const { width, height } = GAME_CONFIG;
 
     this.cameras.main.fadeIn(400);
 
-    const g = this.add.graphics();
-    g.fillStyle(Palette.uiPanel, 0.9);
-    g.fillRoundedRect(cx - 200, 60, 400, 300, 8);
-    g.lineStyle(3, Palette.darkOutline);
-    g.strokeRoundedRect(cx - 200, 60, 400, 300, 8);
-    g.setScrollFactor(0);
+    // Background: sky
+    const sky = this.add.graphics();
+    sky.fillStyle(Palette.sky, 1);
+    sky.fillRect(0, 0, width, height);
+    sky.setScrollFactor(0);
 
-    const nori = this.add
-      .sprite(cx, 160, 'nori')
-      .setOrigin(0.5, 1)
-      .setScale(1.5);
+    // Ground: grass
+    const groundH = 80;
+    const groundG = this.add.graphics();
+    groundG.fillStyle(Palette.nearGrass, 1);
+    groundG.fillRect(0, height - groundH, width + 100, groundH);
+    groundG.fillStyle(Palette.darkDirt, 1);
+    for (let x = 0; x < width + 100; x += 16) {
+      groundG.fillRect(x, height - groundH + 8, 8, 8);
+    }
+    groundG.setScrollFactor(0);
+
+
+    // Left cat: Nori (orange, normal)
+    const leftCatY = height - groundH + 5;
+    this.leftCat = this.add
+    .sprite(160, leftCatY, 'nori')
+    .setOrigin(0.5, 1)
+    .setScale(1.5);
+
     if (this.anims.exists('nori_run')) {
-      nori.play('nori_run');
+    this.leftCat.play('nori_run');
     }
 
-    this.dialogueText = this.add.text(cx, 240, '', {
-      fontSize: '18px',
+    // Right cat: evil (dark tint, bigger, red eyes)
+    this.rightCat = this.add
+    .sprite(640, leftCatY, 'nori')
+    .setOrigin(0.5, 1)
+    .setScale(1.7)
+    .setTint(0x111111);
+
+    if (this.anims.exists('nori_run')) {
+      this.rightCat.play('nori_run');
+    }
+
+    // Red eyes (positioned on head)
+    const eye1 = this.add.rectangle(this.rightCat.x - 8, this.rightCat.y - 50, 6, 4, Palette.warningRed);
+    const eye2 = this.add.rectangle(this.rightCat.x + 8, this.rightCat.y - 50, 6, 4, Palette.warningRed);
+    eye1.setDepth(1000);
+    eye2.setDepth(1000);
+
+
+    // Speech bubble container (drawn per line)
+    this.bubbleGraphics = this.add.graphics();
+    this.bubbleGraphics.setScrollFactor(0);
+    this.bubbleGraphics.setDepth(500);
+
+    this.dialogueText = this.add.text(width / 2, 180, '', {
+      fontSize: '16px',
       fontFamily: 'monospace',
       color: hex(Palette.darkOutline),
-      wordWrap: { width: 360 },
+      wordWrap: { width: 320 },
       align: 'center',
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setScrollFactor(0);
+    this.dialogueText.setDepth(500);
 
-    this.add.text(cx, 320, 'SPACE to continue  |  SHIFT to skip', {
-      fontSize: '12px',
-      fontFamily: 'monospace',
-      color: hex(Palette.goldScore),
-    }).setOrigin(0.5);
+    // "Press SPACE to begin" (blinking)
+    this.startHint = this.add
+      .text(width / 2, height - 50, 'Press SPACE to begin', {
+        fontSize: '14px',
+        fontFamily: 'monospace',
+        color: hex(Palette.darkOutline),
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(500);   // 👈 add depth here in chain
+
+    this.startHintTween = this.tweens.add({
+    targets: this.startHint,
+    alpha: 0.2,
+    duration: 600,
+    yoyo: true,
+    repeat: -1,
+  });
+    this.bubbleGraphics.clear();
+    this.dialogueText.setText('');
 
     this.input.keyboard?.on('keydown-SPACE', this.onSpace, this);
     this.input.keyboard?.on('keydown-SHIFT', this.onShift, this);
+  }
 
-    this.startLine(0);
+  private drawBubble(forLeftCat: boolean): void {
+    const { width } = GAME_CONFIG;
+    this.bubbleGraphics.clear();
+
+    const speaker = forLeftCat ? this.leftCat : this.rightCat;
+    
+    const bubbleW = 360;
+    const bubbleH = 100;
+    const radius = 8;
+
+    // bubble sits near the speaker
+    const y = 80;
+
+    let x = speaker.x - bubbleW / 2;
+    x = Phaser.Math.Clamp(x, 20, width - bubbleW - 20);
+
+    const tailW = 14;
+    const tailH = 16;
+    const tailX = Phaser.Math.Clamp(speaker.x, x + 40, x + bubbleW - 40);
+    const tailY = y + bubbleH;
+
+
+    this.bubbleGraphics.fillStyle(BUBBLE_FILL, 1);
+    this.bubbleGraphics.lineStyle(2, BUBBLE_OUTLINE);
+
+    this.bubbleGraphics.fillRoundedRect(x, y, bubbleW, bubbleH, radius);
+    this.bubbleGraphics.strokeRoundedRect(x, y, bubbleW, bubbleH, radius);
+
+
+    this.bubbleGraphics.fillTriangle(
+      tailX - tailW / 2, tailY - 2,
+      tailX + tailW / 2, tailY - 2,
+      tailX, tailY + tailH
+    );
+
+      this.bubbleGraphics.lineBetween(tailX - tailW / 2, tailY - 2, tailX, tailY + tailH);
+      this.bubbleGraphics.lineBetween(tailX + tailW / 2, tailY - 2, tailX, tailY + tailH);
+      this.bubbleGraphics.lineBetween(tailX - tailW / 2, tailY - 2, tailX + tailW / 2, tailY - 2);
+
+
+    this.dialogueText.setPosition(x + bubbleW / 2, y + bubbleH / 2 - 4);
   }
 
   private stopCurrentAudio(): void {
-    if (this.currentSound && this.currentSound.isPlaying) {
+    if (this.currentSound) {
       this.currentSound.stop();
+      this.currentSound.destroy();
       this.currentSound = null;
     }
   }
 
   private startLine(index: number): void {
     if (index >= DIALOGUE.length) {
-      this.goToMenu();
+      this.goToRunner();
       return;
     }
 
@@ -92,6 +196,8 @@ export class StoryIntroScene extends Phaser.Scene {
     this.lineComplete = false;
 
     const line = DIALOGUE[index];
+    const forLeftCat = index < 3;
+    this.drawBubble(forLeftCat);
     this.dialogueText.setText('');
 
     const sound = this.sound.add(line.audioKey, { volume: 1 });
@@ -120,11 +226,24 @@ export class StoryIntroScene extends Phaser.Scene {
   }
 
   private onSpace = (): void => {
+    if (!this.started) {
+      this.started = true;
+      this.startHintTween?.stop();
+      this.startHintTween = undefined;
+      this.startHint?.destroy();
+      this.sound.unlock?.();
+      this.startLine(0);
+      return;
+    }
     if (!this.lineComplete) return;
     this.startLine(this.lineIndex + 1);
   };
 
   private onShift = (): void => {
+    if (!this.started) {
+      this.goToRunner();
+      return;
+    }
     this.stopCurrentAudio();
     if (this.typingEvent) {
       this.typingEvent.destroy();
@@ -139,13 +258,14 @@ export class StoryIntroScene extends Phaser.Scene {
     }
   };
 
-  private goToMenu(): void {
+  private goToRunner(): void {
+    this.bubbleGraphics?.clear();
     this.stopCurrentAudio();
     this.input.keyboard?.off('keydown-SPACE', this.onSpace, this);
     this.input.keyboard?.off('keydown-SHIFT', this.onShift, this);
     this.cameras.main.fadeOut(400);
     this.time.delayedCall(450, () => {
-      this.scene.start('MainMenu');
+      this.scene.start('Runner', { level: 1 });
     });
   }
 }
