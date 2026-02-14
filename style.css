@@ -1,197 +1,210 @@
+/* ------------------------------
+   Global Reset
+------------------------------ */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
+/* ------------------------------
+   Page Layout
+------------------------------ */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
 }
 
 .container {
-    background: white;
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    max-width: 1200px;
-    width: 100%;
-    position: relative;
-    min-height: 600px;
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 1200px;
+  width: 100%;
+  position: relative;
+  min-height: 600px;
 }
 
 .video-container {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 280px;
-    height: 210px;
-    border-radius: 15px;
-    overflow: hidden;
-    background: #000;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-    z-index: 10;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 280px;
+  height: 210px;
+  border-radius: 15px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  z-index: 10;
 }
 
 .main-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 h1 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 30px;
-    font-size: 2em;
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 2em;
 }
 
 #video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transform: scaleX(-1);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scaleX(-1);
 }
 
 #canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    transform: scaleX(-1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform: scaleX(-1);
 }
 
+/* ------------------------------
+   Buttons / Status
+------------------------------ */
 .controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 button {
-    padding: 12px 30px;
-    font-size: 16px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 600;
+  padding: 12px 30px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
 }
 
 #startBtn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
 #startBtn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
 #stopBtn {
-    background: #e74c3c;
-    color: white;
+  background: #e74c3c;
+  color: white;
 }
 
 #stopBtn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
 }
 
 button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .status {
-    text-align: center;
-    padding: 10px;
-    border-radius: 8px;
-    background: #f0f0f0;
-    color: #666;
-    font-weight: 500;
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f0f0f0;
+  color: #666;
+  font-weight: 500;
 }
 
-.info {
-    text-align: center;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    color: #333;
-}
-
-.info span {
-    font-weight: bold;
-    color: #667eea;
-}
-
+/* ------------------------------
+   Game Area
+------------------------------ */
 .character-container {
-    margin-top: 30px;
-    height: 300px;
-    width: 100%;
-    position: relative;
-    background: linear-gradient(to bottom, #87CEEB 0%, #98D8C8 100%);
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  margin-top: 30px;
+  height: 300px;
+  width: 100%;
+  position: relative;
+  background: linear-gradient(to bottom, #87CEEB 0%, #98D8C8 100%);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
+/* Character base box */
 .character {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
-    border-radius: 50%;
-    left: 50%;
-    bottom: 40px;
-    transform: translateX(-50%);
-    transition: height 0.3s ease, width 0.3s ease;
-    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-    border: 3px solid #fff;
+  position: absolute;
+  bottom: 40px;
+  left: 200px; /* stable starting position */
+  width: 64px;
+  height: 64px;
 }
 
+/* ------------------------------
+   Cat Sprite (3×3 sheet)
+------------------------------ */
+.nori-sprite {
+  width: 64px;
+  height: 64px;
+
+  background-image: url('img/nori.png');
+  background-size: 192px 192px; /* full sheet */
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  image-rendering: pixelated;
+}
+
+/* ------------------------------
+   Running Animation (top row: 3 frames)
+------------------------------ */
+.nori-sprite.running {
+  animation: catRun 0.65s steps(3) infinite;
+}
+
+@keyframes catRun {
+  from { background-position: 0px 0px; }
+  to   { background-position: -192px 0px; }
+}
+
+/* ------------------------------
+   Jump Animation (fixed)
+------------------------------ */
 .character.jumping {
-    animation: jumpAndFall 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    /* Remove transition during animation to prevent conflicts */
-    transition: none;
+  animation: jumpAndFall 0.9s ease-out forwards;
 }
 
 @keyframes jumpAndFall {
-    0% {
-        bottom: 40px;
-        transform: translateX(-50%) scaleY(1);
-    }
-    40% {
-        bottom: 120px;
-        transform: translateX(-50%) scaleY(0.95);
-    }
-    100% {
-        bottom: 40px;
-        transform: translateX(-50%) scaleY(1);
-    }
+  0%   { bottom: 40px; }
+  40%  { bottom: 140px; }
+  100% { bottom: 40px; }
 }
 
-
+/* ------------------------------
+   Ground
+------------------------------ */
 .ground {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 40px;
-    background: linear-gradient(to bottom, #90EE90 0%, #7CCD7C 100%);
-    border-top: 3px solid #5CB85C;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, #90EE90 0%, #7CCD7C 100%);
+  border-top: 3px solid #5CB85C;
 }
-
