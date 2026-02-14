@@ -3,9 +3,14 @@
     padding: 0;
     box-sizing: border-box;
 }
-
+@font-face {
+    font-family: 'PixelFont';
+    src: url('./fonts/pixel.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'PixelFont','Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     display: flex;
@@ -24,6 +29,7 @@ body {
 }
 
 h1 {
+    font-family: 'PixelFont';
     text-align: center;
     color: #333;
     margin-bottom: 30px;
