@@ -27,12 +27,21 @@ export class CatRunner {
     this.startY = y;
 
     this.sprite = scene.physics.add.sprite(x, y, 'cat_runner');
-    this.sprite.setCollideWorldBounds(true);
-    this.sprite.setBodySize(14, 14);
-    this.sprite.setDisplaySize(40, 40);
-    (this.sprite.body as Phaser.Physics.Arcade.Body).allowGravity = true;
-    this.sprite.setOrigin(0.5);
-    this.sprite.setVisible(false);
+    // NEW: scale the physics sprite
+    this.sprite.setOrigin(0.5, 1);
+    this.sprite.setScale(3); // or whatever size you want
+
+    // NEW: resize the physics body to match the scaled sprite
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    body.setSize(this.sprite.width * 0.4, this.sprite.height * 0.6);
+    body.setOffset(this.sprite.width * 0.3, this.sprite.height * 0.4);
+
+    // keep gravity
+    body.allowGravity = true;
+    
+
+this.sprite.setCollideWorldBounds(true);
+this.sprite.setVisible(false)
 
     this.visual = scene.add
       .sprite(this.sprite.x, this.sprite.y, 'nori')

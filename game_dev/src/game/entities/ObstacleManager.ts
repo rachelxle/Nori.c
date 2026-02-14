@@ -1,15 +1,13 @@
 /**
- * Obstacle manager: ground-only obstacles (Chrome Dino-style).
- * Obstacles scroll left. Variation by level: small, tall, double.
+ * Simple red-square obstacle manager with ground + duck obstacles.
  */
 
 import type { RunnerTuning } from '../state/Progression';
 import { GAME_CONFIG } from '../config';
 
-export type ObstacleType = 'small' | 'tall' | 'double';
-
 export interface GroundObstacle {
-  sprite: Phaser.Physics.Arcade.Image;
+  rect: Phaser.GameObjects.Rectangle;
+  body: Phaser.Physics.Arcade.Body;
   scored: boolean;
   width: number;
 }
@@ -27,72 +25,93 @@ export class ObstacleManager {
     this.scene = scene;
     this.params = params;
     this.groundY = groundY;
-    // Textures (obstacle_small, obstacle_tall) generated in BootScene
   }
 
   update(dt: number, playerX: number): void {
     this.spawnTimer += dt;
+
     if (this.spawnTimer >= this.params.spawnInterval) {
       this.spawnTimer = 0;
-      this.spawnObstacles();
+      this.spawnRandomObstacle();
     }
 
     const speed = this.params.scrollSpeed * (dt / 1000);
-    for (const ob of this.obstacles) {
-      ob.sprite.x -= speed;
 
-      if (!ob.scored && playerX > ob.sprite.x + ob.width) {
+    for (const ob of this.obstacles) {
+      ob.rect.x -= speed;
+      ob.body.x = ob.rect.x - ob.rect.width / 2;
+
+      if (!ob.scored && playerX > ob.rect.x + ob.width / 2) {
         ob.scored = true;
         this.onScore?.();
       }
 
-      if (ob.sprite.x + ob.width < -50) {
-        ob.sprite.destroy();
-        this.obstacles = this.obstacles.filter((o) => o !== ob);
+      if (ob.rect.x + ob.width < -50) {
+        ob.rect.destroy();
+        this.obstacles = this.obstacles.filter(o => o !== ob);
       }
     }
   }
 
-  private spawnObstacles(): void {
-    const { width } = this.scene.scale;
-    const obs = GAME_CONFIG.obstacles;
-    const mult = this.params.obstacleSizeMultiplier;
+  // Randomly choose ground or duck obstacle
+  private spawnRandomObstacle(): void {
+    const roll = Math.random();
 
-    // Double obstacle chance
-    const spawnDouble = Math.random() < this.params.doubleObstacleChance;
-
-    if (spawnDouble) {
-      const w1 = Math.round(obs.obstacleWidth * mult);
-      const h1 = Math.round(obs.obstacleHeight * mult);
-      const w2 = Math.round(obs.obstacleWidthTall * mult * 0.8);
-      const h2 = Math.round(obs.obstacleHeightTall * mult * 0.8);
-      const gap = 80;
-      this.spawnOne(width + w1, w1, h1, 'obstacle_small');
-      this.spawnOne(width + w1 + gap + w2, w2, h2, 'obstacle_tall');
+    if (roll < 0.5) {
+      this.spawnGroundObstacle();
     } else {
-      const useTall = Math.random() < 0.4;
-      const w = useTall ? Math.round(obs.obstacleWidthTall * mult) : Math.round(obs.obstacleWidth * mult);
-      const h = useTall ? Math.round(obs.obstacleHeightTall * mult) : Math.round(obs.obstacleHeight * mult);
-      const tex = useTall ? 'obstacle_tall' : 'obstacle_small';
-      this.spawnOne(width + w, w, h, tex);
+      this.spawnDuckObstacle();
     }
   }
 
-  private spawnOne(x: number, w: number, h: number, texture: string): void {
-    // Origin 0.5,1: position is bottom-center. Place bottom at ground surface.
-    const sprite = this.scene.physics.add.image(x, this.groundY, texture);
-    sprite.setOrigin(0.5, 1);
-    sprite.setDisplaySize(w, h);
-    sprite.setImmovable(true);
-    (sprite.body as Phaser.Physics.Arcade.Body).allowGravity = false;
-    sprite.refreshBody();
+  // Ground obstacle
+  private spawnGroundObstacle(): void {
+    const size = 60;
+    const x = GAME_CONFIG.width + 100;
+    const y = this.groundY - size / 2;
 
-    this.obstacles.push({ sprite, scored: false, width: w });
+    this.spawnRectObstacle(x, y, size);
   }
 
-  checkOverlap(body: Phaser.Physics.Arcade.Body): boolean {
+  // Duck obstacle (just above cat’s hitbox)
+  private spawnDuckObstacle(): void {
+    const size = 60;
+    const x = GAME_CONFIG.width + 100;
+
+    // Cat physics hitbox height (from CatRunner)
+    const catHitboxHeight = 106; // 192 * 0.55
+
+    // Tiny gap so running under is safe but jumping hits
+    const tinyGap = 5;
+
+    // Place obstacle bottom just above cat’s head
+    const y = this.groundY - catHitboxHeight - tinyGap - size / 2;
+
+    this.spawnRectObstacle(x, y, size);
+  }
+
+  // Shared rectangle creation
+  private spawnRectObstacle(x: number, y: number, size: number): void {
+    const rect = this.scene.add.rectangle(x, y, size, size, 0xff0000);
+    this.scene.physics.add.existing(rect);
+
+    const body = rect.body as Phaser.Physics.Arcade.Body;
+    body.setImmovable(true);
+    body.setAllowGravity(false);
+    body.setSize(size, size);
+    body.setOffset(0, 0);
+
+    this.obstacles.push({
+      rect,
+      body,
+      scored: false,
+      width: size
+    });
+  }
+
+  checkOverlap(playerBody: Phaser.Physics.Arcade.Body): boolean {
     for (const ob of this.obstacles) {
-      if (this.scene.physics.overlap(body, ob.sprite.body as Phaser.Physics.Arcade.Body)) {
+      if (this.scene.physics.overlap(playerBody, ob.body)) {
         return true;
       }
     }
@@ -101,7 +120,7 @@ export class ObstacleManager {
 
   destroy(): void {
     for (const ob of this.obstacles) {
-      ob.sprite.destroy();
+      ob.rect.destroy();
     }
     this.obstacles = [];
   }
