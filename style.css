@@ -151,16 +151,39 @@ button:disabled {
 
 .character {
     position: absolute;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
-    border-radius: 50%;
+    width: 80px;
+    height: 80px;
     left: 50%;
     bottom: 40px;
     transform: translateX(-50%);
     transition: height 0.3s ease, width 0.3s ease;
-    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-    border: 3px solid #fff;
+    overflow: hidden;
+    background-image: url('cat-sprite.png');
+    background-size: 200% 200%; /* 2x2 grid = 200% */
+    background-repeat: no-repeat;
+    background-position: 0% 0%;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    animation: catRun 0.6s steps(4) infinite;
+}
+
+@keyframes catRun {
+    0% {
+        background-position: 0% 0%; /* Top-left frame */
+    }
+    25% {
+        background-position: -50% 0%; /* Top-right frame */
+    }
+    50% {
+        background-position: 0% -50%; /* Bottom-left frame */
+    }
+    75% {
+        background-position: -50% -50%; /* Bottom-right frame */
+    }
+    100% {
+        background-position: 0% 0%; /* Loop back to top-left */
+    }
 }
 
 .character.jumping {
@@ -169,18 +192,23 @@ button:disabled {
     transition: none;
 }
 
+.character.jumping::before {
+    /* Keep running animation during jump */
+    animation: catRun 0.6s steps(4) infinite;
+}
+
 @keyframes jumpAndFall {
     0% {
         bottom: 40px;
-        transform: translateX(-50%) scaleY(1);
+        transform: translateX(-50%) translateY(0) scaleY(1);
     }
     40% {
-        bottom: 120px;
-        transform: translateX(-50%) scaleY(0.95);
+        bottom: 40px;
+        transform: translateX(-50%) translateY(-80px) scaleY(0.95);
     }
     100% {
         bottom: 40px;
-        transform: translateX(-50%) scaleY(1);
+        transform: translateX(-50%) translateY(0) scaleY(1);
     }
 }
 
