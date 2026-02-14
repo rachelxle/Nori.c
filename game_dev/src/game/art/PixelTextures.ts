@@ -10,6 +10,7 @@ export function generateAllTextures(scene: Phaser.Scene): void {
   generatePixelCatArena(scene);
   generatePixelBoss(scene);
   generateObstacles(scene);
+  generateRunnerBlock(scene);
   generateProjectile(scene);
   generateParticles(scene);
 }
@@ -187,6 +188,20 @@ function generateObstacles(scene: Phaser.Scene): void {
   px(g2, 3, 9, darkGreen); px(g2, 14, 13, darkGreen); px(g2, 2, 17, darkGreen);
   g2.generateTexture('obstacle_tall', 20, 32);
   g2.destroy();
+}
+
+/** Runner mode: single square ground block (Dino-style). */
+function generateRunnerBlock(scene: Phaser.Scene): void {
+  const BLOCK_SIZE = 32;
+  const g = scene.add.graphics();
+  const fill = 0xb57b57;
+  const outline = Palette.darkOutline;
+  g.fillStyle(fill, 1);
+  g.fillRect(0, 0, BLOCK_SIZE, BLOCK_SIZE);
+  g.lineStyle(3, outline);
+  g.strokeRect(0, 0, BLOCK_SIZE, BLOCK_SIZE);
+  g.generateTexture('runner_block', BLOCK_SIZE, BLOCK_SIZE);
+  g.destroy();
 }
 
 /** Projectile - pink/red pixel ball */

@@ -6,6 +6,7 @@
 import Phaser from 'phaser';
 import { GAME_CONFIG } from './game/config';
 import { BootScene } from './game/scenes/BootScene';
+import { StoryIntroScene } from './game/scenes/StoryIntroScene';
 import { MainMenuScene } from './game/scenes/MainMenuScene';
 import { RunnerScene } from './game/scenes/RunnerScene';
 import { ArenaScene } from './game/scenes/ArenaScene';
@@ -38,7 +39,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, MainMenuScene, RunnerScene, ArenaScene, GameOverScene, VictoryScene],
+  scene: [BootScene, StoryIntroScene, MainMenuScene, RunnerScene, ArenaScene, GameOverScene, VictoryScene],
 };
 
 const game = new Phaser.Game(config);

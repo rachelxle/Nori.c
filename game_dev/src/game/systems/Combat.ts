@@ -20,7 +20,12 @@ export class Combat {
     fromX: number,
     fromY: number,
     scene: Phaser.Scene,
-    options?: { knockback?: boolean; blockReduction?: number }
+    options?: {
+      knockback?: boolean;
+      blockReduction?: number;
+      damageSource?: 'volley' | 'slam' | 'dash';
+      onDamageRecorded?: (source: 'volley' | 'slam' | 'dash', amount: number) => void;
+    }
   ): void {
     if (target.isInvincible && (target.invincibleUntil ?? 0) > scene.time.now) {
       return;
@@ -33,6 +38,9 @@ export class Combat {
 
     target.hp = Math.max(0, target.hp - dmg);
     target.onDamaged?.(dmg, fromX, fromY);
+    if (options?.damageSource && options?.onDamageRecorded) {
+      options.onDamageRecorded(options.damageSource, dmg);
+    }
 
     // Invincibility frames (player only - config)
     const cfg = GAME_CONFIG.arena.player;

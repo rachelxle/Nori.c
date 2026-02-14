@@ -17,6 +17,6 @@ export class BootScene extends Phaser.Scene {
     generateAllTextures(this);
     generatePixelCatRunner2(this);
 
-    this.scene.start('MainMenu');
+    this.scene.start('StoryIntro');
   }
 }

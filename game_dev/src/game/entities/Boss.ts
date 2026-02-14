@@ -1,12 +1,16 @@
 /**
  * Boss entity with state machine: INTRO, IDLE, TELEGRAPH, ATTACK, RECOVER, PHASE2, DEAD.
  * Attacks: Projectile Volley, Ground Slam AoE, Dash.
+ * AI layer: optional BossDirector chooses next attack; fallback to random if absent or AI fails.
  */
 
 import { GAME_CONFIG } from '../config';
 import { Palette } from '../art/Palette';
 import { ProjectileEntity } from './Projectile';
 import type { CatArena } from './CatArena';
+import type { BossDirector } from '../ai/BossDirector';
+import type { BossTelemetry } from '../ai/BossTelemetry';
+import type { BossDecision } from '../ai/BossDirector';
 
 const BOSS_TEXTURE_SIZE = 32;
 
@@ -35,6 +39,8 @@ export class Boss {
   public state = BossState.INTRO;
   public phase2 = false;
   public projectiles: ProjectileEntity[] = [];
+  /** Last AI/fallback decision (for HUD). */
+  public lastDecision: BossDecision | null = null;
 
   private scene: Phaser.Scene;
   private params: ArenaParams;
@@ -47,8 +53,19 @@ export class Boss {
   private slamTargetX = 0;
   private slamTargetY = 0;
   private dashTargetX = 0;
+  private director: BossDirector | null = null;
+  private telemetry: BossTelemetry | null = null;
+  private pendingDecision: BossDecision | null = null;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, player: CatArena, params: ArenaParams, scale = 1) {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    player: CatArena,
+    params: ArenaParams,
+    scale = 1,
+    options?: { director?: BossDirector | null; telemetry?: BossTelemetry | null }
+  ) {
     this.scene = scene;
     this.player = player;
     this.params = params;
@@ -66,6 +83,8 @@ export class Boss {
     body.updateFromGameObject();
 
     this.stateStartTime = scene.time.now;
+    this.director = options?.director ?? null;
+    this.telemetry = options?.telemetry ?? null;
   }
 
   update(time: number): void {
@@ -94,7 +113,22 @@ export class Boss {
 
       case BossState.IDLE: {
         if (dt >= this.stateDuration) {
-          this.nextAttack = Phaser.Utils.Array.GetRandom(['volley', 'slam', 'dash']) as BossAttackType;
+          if (this.pendingDecision) {
+            this.lastDecision = this.pendingDecision;
+            this.pendingDecision = null;
+            this.nextAttack = this.lastDecision.nextAttack.toLowerCase() as BossAttackType;
+            console.log(
+              `BossDecision [${this.lastDecision.mode}]: ${this.lastDecision.nextAttack} — ${this.lastDecision.reason}`
+            );
+          } else {
+            this.nextAttack = Phaser.Utils.Array.GetRandom(['volley', 'slam', 'dash']) as BossAttackType;
+            this.lastDecision = {
+              nextAttack: this.nextAttack.toUpperCase() as 'VOLLEY' | 'SLAM' | 'DASH',
+              reason: 'random (no decision ready)',
+              weights: { VOLLEY: 1, SLAM: 1, DASH: 1 },
+              mode: 'FALLBACK',
+            };
+          }
           this.setState(BossState.TELEGRAPH, time);
         }
         break;
@@ -136,6 +170,10 @@ export class Boss {
       const min = cfg.idleMinDuration / (this.phase2 ? cfg.phase2AttackFreqMultiplier : 1);
       const max = cfg.idleMaxDuration / (this.phase2 ? cfg.phase2AttackFreqMultiplier : 1);
       this.stateDuration = Phaser.Math.Between(min, max);
+      const phase = this.phase2 ? 2 : 1;
+      this.director?.decideNextAttack(phase).then((d) => {
+        this.pendingDecision = d;
+      });
     }
   }
 
@@ -231,6 +269,7 @@ export class Boss {
           );
           if (dist < cfg.slamRadius && !this.player.isDodging && !this.player.isInvincible) {
             this.player.hp -= damage;
+            this.telemetry?.recordDamage('slam', damage);
             this.player.isInvincible = true;
             this.player.invincibleUntil = time + GAME_CONFIG.arena.player.invincibilityDuration;
             this.scene.cameras.main.shake(200, 0.01);
@@ -258,6 +297,7 @@ export class Boss {
           const hit = Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, this.player.sprite.x, this.player.sprite.y) < 60;
           if (hit && !this.player.isDodging && !this.player.isInvincible) {
             this.player.hp -= damage;
+            this.telemetry?.recordDamage('dash', damage);
             this.player.isInvincible = true;
             this.player.invincibleUntil = time + GAME_CONFIG.arena.player.invincibilityDuration;
           }

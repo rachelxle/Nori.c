@@ -1,13 +1,19 @@
 /**
  * Cat entity for Runner (Chrome Dino-style) mode.
- * Uses InputProvider ONLY for jump. Pixel-art cat with run animation.
+ * Uses InputProvider ONLY for jump. Orange cat visual (drawOrangeCat) follows invisible physics body.
  */
 
 import type { InputProvider } from '../../input/InputProvider';
 import { GAME_CONFIG } from '../config';
+import { drawOrangeCat } from '../art/CatSprites';
+
+const ORANGE_CAT_BODY_W = 48;
+const ORANGE_CAT_BODY_H = 44;
 
 export class CatRunner {
   public sprite: Phaser.Physics.Arcade.Sprite;
+  /** Visible orange cat container; position updated each frame to follow physics body. */
+  public visual: Phaser.GameObjects.Container;
   public isDead = false;
   public lives: number;
   public invincibleUntil = 0;
@@ -18,7 +24,6 @@ export class CatRunner {
   private landParticles: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private startY: number;
   private wasGrounded = false;
-  private animTimer = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, input: InputProvider) {
     this.scene = scene;
@@ -27,11 +32,15 @@ export class CatRunner {
     this.startY = y;
 
     this.sprite = scene.physics.add.sprite(x, y, 'cat_runner');
+    this.sprite.setVisible(false);
     this.sprite.setCollideWorldBounds(true);
-    this.sprite.setBodySize(14, 14);
-    this.sprite.setDisplaySize(40, 40);
+    this.sprite.setBodySize(24, 22);
+    this.sprite.setDisplaySize(ORANGE_CAT_BODY_W, ORANGE_CAT_BODY_H);
     (this.sprite.body as Phaser.Physics.Arcade.Body).allowGravity = true;
     this.sprite.setOrigin(0.5);
+
+    this.visual = drawOrangeCat(scene, x - ORANGE_CAT_BODY_W / 2, y - ORANGE_CAT_BODY_H / 2, 1);
+    scene.add.existing(this.visual);
 
     this.setupParticles();
   }
@@ -62,7 +71,7 @@ export class CatRunner {
     return body.blocked.down || body.touching.down;
   }
 
-  update(dt?: number): void {
+  update(_dt?: number): void {
     if (this.isDead) return;
 
     const cfg = GAME_CONFIG.runner;
@@ -83,15 +92,10 @@ export class CatRunner {
       this.sprite.setVelocityY(cfg.maxFallSpeed);
     }
 
-    // Run animation - alternate frames
-    if (grounded) {
-      this.animTimer += dt !== undefined ? dt : 16;
-      if (this.animTimer > 120) {
-        this.animTimer = 0;
-        const frame = this.sprite.texture.key === 'cat_runner' ? 'cat_runner_2' : 'cat_runner';
-        this.sprite.setTexture(frame);
-      }
-    }
+    this.visual.setPosition(
+      this.sprite.x - ORANGE_CAT_BODY_W / 2,
+      this.sprite.y - ORANGE_CAT_BODY_H / 2
+    );
   }
 
   private emitJumpParticles(): void {
@@ -121,6 +125,7 @@ export class CatRunner {
   destroy(): void {
     this.jumpParticles?.destroy();
     this.landParticles?.destroy();
+    this.visual.destroy();
     this.sprite.destroy();
   }
 }

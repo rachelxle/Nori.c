@@ -12,6 +12,18 @@ import { ProjectileEntity } from '../entities/Projectile';
 import { Combat } from '../systems/Combat';
 import { KeyboardInput } from '../../input/KeyboardInput';
 import type { InputProvider } from '../../input/InputProvider';
+import { BossTelemetry } from '../ai/BossTelemetry';
+import { BossDirector } from '../ai/BossDirector';
+import { AIDecisionHud } from '../ui/AIDecisionHud';
+import { speak } from '../audio/Voice';
+import type { BossDecision } from '../ai/BossDirector';
+
+const ENABLE_TTS = true;
+const BOSS_TAUNTS: Record<string, string> = {
+  VOLLEY: 'I learned your pattern.',
+  SLAM: 'Blocking again? Slam time.',
+  DASH: 'Run.',
+};
 
 function hex(color: number): string {
   return '#' + color.toString(16).padStart(6, '0');
@@ -29,6 +41,10 @@ export class ArenaScene extends Phaser.Scene {
   private dodgeCooldownBar!: Phaser.GameObjects.Graphics;
   private gameOver = false;
   private victoryOverlay: Phaser.GameObjects.Container | null = null;
+  private telemetry!: BossTelemetry;
+  private aiDecisionHud!: AIDecisionHud;
+  private wasDodging = false;
+  private lastSpokenDecision: BossDecision | null = null;
 
   constructor() {
     super({ key: 'Arena' });
@@ -84,8 +100,15 @@ export class ArenaScene extends Phaser.Scene {
     this.cat = new CatArena(this, 120, height - 80, this.inputProvider);
     this.physics.add.collider(this.cat.sprite, ground);
 
+    this.telemetry = new BossTelemetry();
+    this.telemetry.startFight(this.level, 1, this.cat.hp);
+    const director = new BossDirector(this.telemetry);
+
     const bossScale = Progression.getBossScale(this.level);
-    this.boss = new Boss(this, width - 120, height - 80, this.cat, this.arenaParams, bossScale);
+    this.boss = new Boss(this, width - 120, height - 80, this.cat, this.arenaParams, bossScale, {
+      director,
+      telemetry: this.telemetry,
+    });
     this.physics.add.collider(this.boss.sprite, ground);
     this.physics.add.collider(this.boss.sprite, this.cat.sprite, () => {});
 
@@ -94,6 +117,8 @@ export class ArenaScene extends Phaser.Scene {
     this.dodgeCooldownBar = this.add.graphics();
 
     this.createUI(width, height);
+
+    this.aiDecisionHud = new AIDecisionHud(this, 10, 65);
 
     // BOSS N title
     const bossTitle = this.add.text(width / 2, height / 2 - 60, `BOSS ${this.level}`, {
@@ -151,13 +176,30 @@ export class ArenaScene extends Phaser.Scene {
     this.dodgeCooldownBar.setDepth(11);
   }
 
-  update(_time: number, _dt: number): void {
+  update(_time: number, dt: number): void {
     if (this.gameOver) return;
 
     const time = this.time.now;
 
+    this.telemetry.currentPlayerHP = this.cat.hp;
+    const dist = Phaser.Math.Distance.Between(
+      this.cat.sprite.x,
+      this.cat.sprite.y,
+      this.boss.sprite.x,
+      this.boss.sprite.y
+    );
+    this.telemetry.recordDistance(dist);
+    if (this.cat.isBlocking) {
+      this.telemetry.recordBlock(dt / 1000);
+    }
+    if (!this.wasDodging && this.cat.isDodging) {
+      this.telemetry.recordDodge();
+    }
+    this.wasDodging = this.cat.isDodging;
+
     const attackResult = this.cat.update(time);
     if (attackResult?.attacking) {
+      this.telemetry.recordAttack();
       this.cat.startAttack();
       this.time.delayedCall(75, () => {
         if (this.cat.attackHitbox && this.boss.state !== BossState.DEAD) {
@@ -193,7 +235,12 @@ export class ArenaScene extends Phaser.Scene {
             p.sprite.x,
             p.sprite.y,
             this,
-            { knockback: true, blockReduction: this.cat.getBlockReduction() }
+            {
+              knockback: true,
+              blockReduction: this.cat.getBlockReduction(),
+              damageSource: 'volley',
+              onDamageRecorded: (source, amount) => this.telemetry.recordDamage(source, amount),
+            }
           );
         }
         p.destroy();
@@ -208,7 +255,16 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     if (this.boss.state === BossState.DEAD && !this.victoryOverlay) {
+      this.telemetry.endFight(this.cat.hp);
       this.onBossDefeated();
+    }
+
+    this.aiDecisionHud.update(this.boss.lastDecision);
+
+    if (ENABLE_TTS && this.boss.lastDecision && this.boss.lastDecision !== this.lastSpokenDecision) {
+      this.lastSpokenDecision = this.boss.lastDecision;
+      const taunt = this.boss.lastDecision.taunt ?? BOSS_TAUNTS[this.boss.lastDecision.nextAttack] ?? 'Try again.';
+      speak(taunt, 'BOSS');
     }
 
     if (this.cat.hp <= 0) {

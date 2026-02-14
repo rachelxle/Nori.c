@@ -1,12 +1,11 @@
 /**
- * Obstacle manager: ground-only obstacles (Chrome Dino-style).
- * Obstacles scroll left. Variation by level: small, tall, double.
+ * Obstacle manager: ground-only square blocks (Dino-style).
+ * One block at a time (optionally two in a row by level). No floating, no thin poles.
  */
 
 import type { RunnerTuning } from '../state/Progression';
-import { GAME_CONFIG } from '../config';
 
-export type ObstacleType = 'small' | 'tall' | 'double';
+export const BLOCK_SIZE = 32;
 
 export interface GroundObstacle {
   sprite: Phaser.Physics.Arcade.Image;
@@ -19,6 +18,7 @@ export class ObstacleManager {
   private params: RunnerTuning;
   private obstacles: GroundObstacle[] = [];
   private spawnTimer = 0;
+  /** Y position of the top of the ground strip (block bottom sits here). */
   private groundY: number;
 
   onScore?: () => void;
@@ -27,7 +27,6 @@ export class ObstacleManager {
     this.scene = scene;
     this.params = params;
     this.groundY = groundY;
-    // Textures (obstacle_small, obstacle_tall) generated in BootScene
   }
 
   update(dt: number, playerX: number): void {
@@ -55,39 +54,23 @@ export class ObstacleManager {
 
   private spawnObstacles(): void {
     const { width } = this.scene.scale;
-    const obs = GAME_CONFIG.obstacles;
-    const mult = this.params.obstacleSizeMultiplier;
+    const x = width + BLOCK_SIZE;
+    this.spawnOne(x);
 
-    // Double obstacle chance
-    const spawnDouble = Math.random() < this.params.doubleObstacleChance;
-
-    if (spawnDouble) {
-      const w1 = Math.round(obs.obstacleWidth * mult);
-      const h1 = Math.round(obs.obstacleHeight * mult);
-      const w2 = Math.round(obs.obstacleWidthTall * mult * 0.8);
-      const h2 = Math.round(obs.obstacleHeightTall * mult * 0.8);
-      const gap = 80;
-      this.spawnOne(width + w1, w1, h1, 'obstacle_small');
-      this.spawnOne(width + w1 + gap + w2, w2, h2, 'obstacle_tall');
-    } else {
-      const useTall = Math.random() < 0.4;
-      const w = useTall ? Math.round(obs.obstacleWidthTall * mult) : Math.round(obs.obstacleWidth * mult);
-      const h = useTall ? Math.round(obs.obstacleHeightTall * mult) : Math.round(obs.obstacleHeight * mult);
-      const tex = useTall ? 'obstacle_tall' : 'obstacle_small';
-      this.spawnOne(width + w, w, h, tex);
+    if (Math.random() < this.params.doubleObstacleChance) {
+      this.spawnOne(x + BLOCK_SIZE + 24);
     }
   }
 
-  private spawnOne(x: number, w: number, h: number, texture: string): void {
-    // Origin 0.5,1: position is bottom-center. Place bottom at ground surface.
-    const sprite = this.scene.physics.add.image(x, this.groundY, texture);
+  private spawnOne(x: number): void {
+    const sprite = this.scene.physics.add.image(x, this.groundY, 'runner_block');
     sprite.setOrigin(0.5, 1);
-    sprite.setDisplaySize(w, h);
+    sprite.setDisplaySize(BLOCK_SIZE, BLOCK_SIZE);
     sprite.setImmovable(true);
     (sprite.body as Phaser.Physics.Arcade.Body).allowGravity = false;
     sprite.refreshBody();
 
-    this.obstacles.push({ sprite, scored: false, width: w });
+    this.obstacles.push({ sprite, scored: false, width: BLOCK_SIZE });
   }
 
   checkOverlap(body: Phaser.Physics.Arcade.Body): boolean {
