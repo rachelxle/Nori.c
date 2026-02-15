@@ -8,6 +8,7 @@ import { Progression } from '../state/Progression';
 import { Palette } from '../art/Palette';
 import { CatArena } from '../entities/CatArena';
 import { ProjectileEntity } from '../entities/Projectile';
+import { ObstacleManager } from '../entities/ObstacleManager';
 import { Combat } from '../systems/Combat';
 import { Boss, BossState } from '../entities/Boss';
 import { KeyboardInput } from '../../input/KeyboardInput';
@@ -22,6 +23,7 @@ export class ArenaScene extends Phaser.Scene {
   private cat!: CatArena;
   private boss!: Boss;
   private projectiles: ProjectileEntity[] = [];
+  private obstacleManager!: ObstacleManager;
   private level = 1;
   private arenaParams = { bossHP: 250, bossDamageMultiplier: 1, bossAttackCooldownMultiplier: 1 };
   private playerHpBar!: Phaser.GameObjects.Graphics;
@@ -53,38 +55,46 @@ export class ArenaScene extends Phaser.Scene {
       (this.inputProvider as { setScene: (s: Phaser.Scene) => void }).setScene(this);
     }
 
-    // Arena background - stone wall
-    const g = this.add.graphics();
-    g.fillStyle(0x9a8b7a, 1);
-    g.fillRect(0, 0, width, height);
-    g.fillStyle(Palette.darkDirt, 1);
-    for (let x = 0; x < width; x += 32) {
-      for (let y = 0; y < height; y += 32) {
-        if ((x + y) % 64 === 0) g.fillRect(x, y, 32, 32);
+    // Arena background - boss_background, full screen cover
+    if (this.textures.exists('boss_background')) {
+      const bg = this.add.image(width / 2, height / 2, 'boss_background').setDepth(-10);
+      const scaleX = width / bg.width;
+      const scaleY = height / bg.height;
+      bg.setScale(Math.max(scaleX, scaleY));
+    } else {
+      const g = this.add.graphics();
+      g.fillStyle(0x9a8b7a, 1);
+      g.fillRect(0, 0, width, height);
+      g.fillStyle(Palette.darkDirt, 1);
+      for (let x = 0; x < width; x += 32) {
+        for (let y = 0; y < height; y += 32) {
+          if ((x + y) % 64 === 0) g.fillRect(x, y, 32, 32);
+        }
       }
+      g.generateTexture('arena_bg', width, height);
+      g.destroy();
+      this.add.image(width / 2, height / 2, 'arena_bg').setDepth(-2);
     }
-    g.generateTexture('arena_bg', width, height);
-    g.destroy();
-    this.add.image(width / 2, height / 2, 'arena_bg').setDepth(-2);
 
-    // Ground
-    const groundG = this.add.graphics();
-    groundG.fillStyle(Palette.dirt, 1);
-    groundG.fillRect(0, 0, width + 100, 100);
-    groundG.fillStyle(Palette.darkDirt, 1);
-    for (let x = 0; x < width + 100; x += 16) {
-      groundG.fillRect(x, 40, 8, 8);
-    }
-    groundG.generateTexture('arena_ground', width + 100, 100);
-    groundG.destroy();
-    this.add.image(width / 2, height - 30, 'arena_ground').setDepth(-1);
-
-    const ground = this.add.rectangle(width / 2, height - 20, width + 100, 80, Palette.dirt, 0);
-    ground.setVisible(false);
+    // Invisible physics ground (background covers whole screen)
+    const ground = this.add.rectangle(width / 2, height - 20, width + 100, 80, 0, 0);
     this.physics.add.existing(ground, true);
 
     this.cat = new CatArena(this, 120, height - 80, this.inputProvider);
     this.physics.add.collider(this.cat.sprite, ground);
+
+    this.physics.world.gravity.y = GAME_CONFIG.runner.gravity;
+
+    const arenaObs = GAME_CONFIG.arenaObstacles;
+    const obstacleTuning = {
+      scrollSpeed: arenaObs.scrollSpeed,
+      spawnInterval: arenaObs.spawnInterval,
+      targetScore: 0,
+      obstacleSizeMultiplier: 1,
+      doubleObstacleChance: 0,
+    };
+    const groundTopY = height - 60;
+    this.obstacleManager = new ObstacleManager(this, obstacleTuning, groundTopY);
 
     const bossScale = Progression.getBossScale(this.level);
     this.boss = new Boss(this, width - 140, height - 100, this.cat, this.arenaParams, bossScale);
@@ -146,7 +156,7 @@ export class ArenaScene extends Phaser.Scene {
     this.add.text(25, 18, 'Player HP', { fontSize: '14px', fontFamily: 'monospace', color: hex(Palette.darkOutline) }).setScrollFactor(0).setDepth(11);
     this.add.text(width - 180, 18, 'Boss HP', { fontSize: '14px', fontFamily: 'monospace', color: hex(Palette.darkOutline) }).setScrollFactor(0).setDepth(11);
     this.add.text(width / 2 - 60, 18, 'Dodge', { fontSize: '12px', fontFamily: 'monospace', color: hex(Palette.darkOutline) }).setScrollFactor(0).setDepth(11);
-    this.add.text(width / 2, height - 25, 'Move: A/D  Shoot: Space  Block: K  Dodge: W/Up', { fontSize: '12px', fontFamily: 'monospace', color: hex(Palette.darkOutline) }).setOrigin(0.5).setScrollFactor(0).setDepth(11);
+    this.add.text(width / 2, height - 25, 'Move: A/D  Shoot: Space  Block: K  Jump: Up arrow / W', { fontSize: '12px', fontFamily: 'monospace', color: hex(Palette.darkOutline) }).setOrigin(0.5).setScrollFactor(0).setDepth(11);
   }
 
   private updateHUD(): void {
@@ -179,10 +189,24 @@ export class ArenaScene extends Phaser.Scene {
     this.dodgeCooldownBar.setDepth(11);
   }
 
-  update(_time: number, _dt: number): void {
+  update(_time: number, dt: number): void {
     if (this.gameOver) return;
 
     const time = this.time.now;
+
+    this.obstacleManager.update(dt, this.cat.sprite.x);
+    const hitOb = this.obstacleManager.getOverlappingObstacle(this.cat.sprite.body as Phaser.Physics.Arcade.Body);
+    if (hitOb && !this.cat.isDodging && !this.cat.isInvincible) {
+      Combat.applyDamage(
+        this.cat,
+        GAME_CONFIG.arenaObstacles.damage,
+        hitOb.rect.x,
+        hitOb.rect.y,
+        this,
+        { knockback: true, blockReduction: this.cat.getBlockReduction() }
+      );
+      this.obstacleManager.removeObstacle(hitOb);
+    }
 
     const attackResult = this.cat.update(time);
     if (attackResult?.shoot && this.boss.state !== BossState.DEAD) {

@@ -61,7 +61,7 @@ export class CatArena {
       this.isInvincible = true;
       this.invincibleUntil = time + cfg.dodgeDuration;
       const dir = this.input.moveAxis() || (this.sprite.flipX ? -1 : 1);
-      body.setVelocity(dir * cfg.dodgeSpeed, 0);
+      body.setVelocity(dir * cfg.dodgeSpeed, cfg.jumpForce);
       return null;
     }
 

@@ -118,6 +118,22 @@ export class ObstacleManager {
     return false;
   }
 
+  /** Returns the first overlapping obstacle, or null. Used to get position for knockback. */
+  getOverlappingObstacle(playerBody: Phaser.Physics.Arcade.Body): GroundObstacle | null {
+    for (const ob of this.obstacles) {
+      if (this.scene.physics.overlap(playerBody, ob.body)) {
+        return ob;
+      }
+    }
+    return null;
+  }
+
+  /** Remove obstacle when player hits it (e.g. in Arena). */
+  removeObstacle(ob: GroundObstacle): void {
+    ob.rect.destroy();
+    this.obstacles = this.obstacles.filter((o) => o !== ob);
+  }
+
   destroy(): void {
     for (const ob of this.obstacles) {
       ob.rect.destroy();

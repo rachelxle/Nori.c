@@ -52,6 +52,13 @@ export const GAME_CONFIG = {
     },
   },
 
+  // Arena - Obstacles (scroll from right toward player)
+  arenaObstacles: {
+    scrollSpeed: 180,
+    spawnInterval: 2200,
+    damage: 15,
+  },
+
   // Arena - Boss
   boss: {
     baseHP: 250,

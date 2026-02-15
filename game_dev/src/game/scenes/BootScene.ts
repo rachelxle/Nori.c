@@ -12,6 +12,7 @@ export class BootScene extends Phaser.Scene {
   preload(): void {
     this.load.image('runner_background', 'assets/background.png');
     this.load.image('intro_background', 'assets/intro_background.png');
+    this.load.image('boss_background', 'assets/boss_background.png');
     this.load.spritesheet('nori', 'assets/sprites/nori.png', {
       frameWidth: 64,
       frameHeight: 64,
