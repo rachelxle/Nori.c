@@ -31,17 +31,10 @@ export class VictoryScene extends Phaser.Scene {
       color: hex(Palette.goldScore),
     }).setOrigin(0.5);
 
-    this.add.text(cx, 250, 'You defeated all 5 bosses!', {
+    this.add.text(cx, 250, 'You defeated Evil Uni!', {
       fontSize: '24px',
       fontFamily: 'monospace',
       color: hex(Palette.darkOutline),
-    }).setOrigin(0.5);
-
-    const best = Progression.getBestLevel();
-    this.add.text(cx, 310, `Best Level: ${best}`, {
-      fontSize: '20px',
-      fontFamily: 'monospace',
-      color: hex(Palette.nearGrass),
     }).setOrigin(0.5);
 
     const playAgainBtn = this.add.text(cx, 420, 'Press SPACE to Play Again', {
