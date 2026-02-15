@@ -1,7 +1,7 @@
 /**
- * MediaPipe hand-jump detector for Phaser game.
- * Dispatches "vision-jump" CustomEvent when upward hand motion is detected.
- * Uses window events so Phaser can listen without coupling.
+ * MediaPipe finger-lift jump detector for Phaser game.
+ * Dispatches "vision-jump" CustomEvent when index finger lifts upward.
+ * Tuned for low sensitivity so small movements don't trigger jumps.
  */
 (function () {
   const video = document.getElementById('video');
@@ -20,13 +20,20 @@
   let hands = null;
   let stream = null;
 
-  // Jump detection: track hand Y over time, detect upward motion
-  const MIDDLE_FINGER_TIP = 9;
-  const JUMP_THRESHOLD = 0.08;       // min Y delta (upward = negative)
-  const SMOOTHING = 0.3;             // exponential smoothing
+  // Finger-lift detection
+  const INDEX_TIP = 8;
+  const INDEX_BASE = 5;
+
+  // Less sensitive settings
+  const LIFT_THRESHOLD = 0.045;   // higher threshold = less sensitive
+  const SMOOTHING = 0.75;         // stronger smoothing = less jitter
   const COOLDOWN_MS = 400;
-  let prevY = 0.5;
-  let smoothedY = 0.5;
+
+  // Require the finger to stay lifted for a few frames
+  const REQUIRED_FRAMES = 3;
+  let liftedFrames = 0;
+
+  let smoothedLift = 0;
   let lastJumpTime = 0;
 
   function setStatus(text) {
@@ -40,6 +47,7 @@
     const now = Date.now();
     if (now - lastJumpTime < COOLDOWN_MS) return;
     lastJumpTime = now;
+
     window.dispatchEvent(new CustomEvent('vision-jump'));
     setStatus('Jump detected!');
   }
@@ -50,7 +58,7 @@
     });
 
     hands.setOptions({
-      maxNumHands: 2,
+      maxNumHands: 1,
       modelComplexity: 1,
       minDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5,
@@ -67,28 +75,40 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-      for (const landmarks of results.multiHandLandmarks) {
-        if (typeof drawConnectors === 'function') {
-          drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 2 });
-        }
-        if (typeof drawLandmarks === 'function') {
-          drawLandmarks(ctx, landmarks, { color: '#FF0000', lineWidth: 1, radius: 3 });
+      const landmarks = results.multiHandLandmarks[0];
+
+      if (typeof drawConnectors === 'function') {
+        drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 2 });
+      }
+      if (typeof drawLandmarks === 'function') {
+        drawLandmarks(ctx, landmarks, { color: '#FF0000', lineWidth: 1, radius: 3 });
+      }
+
+      const tip = landmarks[INDEX_TIP];
+      const base = landmarks[INDEX_BASE];
+
+      if (tip && base) {
+        const rawLift = base.y - tip.y; // positive = finger lifted
+
+        // Smooth the signal heavily
+        smoothedLift = SMOOTHING * smoothedLift + (1 - SMOOTHING) * rawLift;
+
+        // Debug
+        console.log("raw:", rawLift.toFixed(3), "smooth:", smoothedLift.toFixed(3));
+
+        // Check if finger is lifted enough
+        if (smoothedLift > LIFT_THRESHOLD) {
+          liftedFrames++;
+        } else {
+          liftedFrames = 0;
         }
 
-        // Jump detection: middle finger tip Y (0=top, 1=bottom)
-        const tip = landmarks[MIDDLE_FINGER_TIP];
-        if (tip && typeof tip.y === 'number') {
-          smoothedY = SMOOTHING * smoothedY + (1 - SMOOTHING) * tip.y;
-          const delta = prevY - smoothedY; // positive = hand moved up
-          prevY = smoothedY;
-          if (delta > JUMP_THRESHOLD) {
-            triggerJump();
-          }
+        // Only trigger if lifted for multiple frames
+        if (liftedFrames >= REQUIRED_FRAMES) {
+          liftedFrames = 0;
+          triggerJump();
         }
       }
-    } else {
-      prevY = 0.5;
-      smoothedY = 0.5;
     }
 
     ctx.restore();
@@ -103,7 +123,7 @@
       });
 
       video.srcObject = stream;
-      setStatus('Camera active – raise hand to jump');
+      setStatus('Camera active – lift finger to jump');
       startBtn.disabled = true;
       stopBtn.disabled = false;
 

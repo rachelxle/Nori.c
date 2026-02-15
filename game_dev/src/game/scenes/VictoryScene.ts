@@ -56,13 +56,21 @@ export class VictoryScene extends Phaser.Scene {
     }).setOrigin(0.5);
     titleText.setShadow(0, 0, hex(VictoryUI.titleGlow), 12);
 
+<<<<<<< HEAD
     this.add.text(cx, 250, 'You defeated the boss!', {
+=======
+    this.add.text(cx, 250, 'You defeated Evil Uni!', {
+>>>>>>> webcam-fix
       fontSize: '24px',
       fontFamily: 'PixelFont',
       color: hex(VictoryUI.stats),
     }).setOrigin(0.5);
 
+<<<<<<< HEAD
     const playAgainBtn = this.add.text(cx, 400, 'Press SPACE to Play Again', {
+=======
+    const playAgainBtn = this.add.text(cx, 420, 'Press SPACE to Play Again', {
+>>>>>>> webcam-fix
       fontSize: '24px',
       fontFamily: 'PixelFont',
       color: hex(VictoryUI.buttonText),

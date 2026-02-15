@@ -1,12 +1,14 @@
 /**
- * Simple red-square obstacle manager with ground + duck obstacles.
+ * Simple Luna-sprite obstacle manager with ground + duck obstacles.
+ * Same logic as the red-square version, but using sprites.
  */
 
 import type { RunnerTuning } from '../state/Progression';
 import { GAME_CONFIG } from '../config';
+import Phaser from 'phaser';
 
 export interface GroundObstacle {
-  rect: Phaser.GameObjects.Rectangle;
+  sprite: Phaser.GameObjects.Sprite;
   body: Phaser.Physics.Arcade.Body;
   scored: boolean;
   width: number;
@@ -38,16 +40,16 @@ export class ObstacleManager {
     const speed = this.params.scrollSpeed * (dt / 1000);
 
     for (const ob of this.obstacles) {
-      ob.rect.x -= speed;
-      ob.body.x = ob.rect.x - ob.rect.width / 2;
+      ob.sprite.x -= speed;
+      ob.body.x = ob.sprite.x - ob.sprite.displayWidth / 2;
 
-      if (!ob.scored && playerX > ob.rect.x + ob.width / 2) {
+      if (!ob.scored && playerX > ob.sprite.x + ob.width / 2) {
         ob.scored = true;
         this.onScore?.();
       }
 
-      if (ob.rect.x + ob.width < -50) {
-        ob.rect.destroy();
+      if (ob.sprite.x + ob.width < -50) {
+        ob.sprite.destroy();
         this.obstacles = this.obstacles.filter(o => o !== ob);
       }
     }
@@ -56,7 +58,6 @@ export class ObstacleManager {
   // Randomly choose ground or duck obstacle
   private spawnRandomObstacle(): void {
     const roll = Math.random();
-
     if (roll < 0.5) {
       this.spawnGroundObstacle();
     } else {
@@ -70,7 +71,7 @@ export class ObstacleManager {
     const x = GAME_CONFIG.width + 100;
     const y = this.groundY - size / 2;
 
-    this.spawnRectObstacle(x, y, size);
+    this.spawnSpriteObstacle(x, y, size);
   }
 
   // Duck obstacle (just above cat’s hitbox)
@@ -78,31 +79,36 @@ export class ObstacleManager {
     const size = 60;
     const x = GAME_CONFIG.width + 100;
 
-    // Cat physics hitbox height (from CatRunner)
-    const catHitboxHeight = 106; // 192 * 0.55
-
-    // Tiny gap so running under is safe but jumping hits
+    const catHitboxHeight = 106;
     const tinyGap = 5;
 
-    // Place obstacle bottom just above cat’s head
     const y = this.groundY - catHitboxHeight - tinyGap - size / 2;
 
-    this.spawnRectObstacle(x, y, size);
+    this.spawnSpriteObstacle(x, y, size);
   }
 
-  // Shared rectangle creation
-  private spawnRectObstacle(x: number, y: number, size: number): void {
-    const rect = this.scene.add.rectangle(x, y, size, size, 0xff0000);
-    this.scene.physics.add.existing(rect);
+  // Shared sprite creation
+  private spawnSpriteObstacle(x: number, y: number, size: number): void {
+    const sprite = this.scene.add.sprite(x, y, 'luna');
 
-    const body = rect.body as Phaser.Physics.Arcade.Body;
+    // Scale Luna so she visually matches a 60×60 block
+    const baseFrameSize = 64; // your sprite sheet frame size
+    sprite.setScale(size / baseFrameSize);
+
+    this.scene.physics.add.existing(sprite);
+
+    const body = sprite.body as Phaser.Physics.Arcade.Body;
     body.setImmovable(true);
     body.setAllowGravity(false);
+
     body.setSize(size, size);
-    body.setOffset(0, 0);
+    body.setOffset(
+      (sprite.displayWidth - size) / 2,
+      (sprite.displayHeight - size) / 2
+    );
 
     this.obstacles.push({
-      rect,
+      sprite,
       body,
       scored: false,
       width: size
@@ -136,7 +142,7 @@ export class ObstacleManager {
 
   destroy(): void {
     for (const ob of this.obstacles) {
-      ob.rect.destroy();
+      ob.sprite.destroy();
     }
     this.obstacles = [];
   }

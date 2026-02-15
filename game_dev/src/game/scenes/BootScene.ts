@@ -10,29 +10,43 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    // Backgrounds
     this.load.image('runner_background', 'assets/background.png');
     this.load.image('intro_background', 'assets/intro_background.png');
+<<<<<<< HEAD
     this.load.image('boss_background', 'assets/boss_background.png');
+=======
+
+    // Main cat (Nori)
+>>>>>>> webcam-fix
     this.load.spritesheet('nori', 'assets/sprites/nori.png', {
       frameWidth: 64,
       frameHeight: 64,
     });
 
+    // ⭐ Luna spritesheet (64×64)
+    this.load.spritesheet('luna', 'assets/sprites/luna.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+
+    // Idle animations
     this.load.spritesheet('nori-idle', 'assets/sprites/nori-idle.png', {
       frameWidth: 64,
-      frameHeight: 64
+      frameHeight: 64,
     });
 
     this.load.spritesheet('uni-idle', 'assets/sprites/uni-idle.png', {
       frameWidth: 64,
-      frameHeight: 64
+      frameHeight: 64,
     });
 
     // Intro cutscene voice lines
     for (let i = 1; i <= 6; i++) {
       this.load.audio(`intro_0${i}`, `audio/intro_0${i}.mp3`);
     }
-    // Boss taunt voice lines
+
+    // Boss taunts
     this.load.audio('boss_learn', 'audio/boss_learn.mp3');
     this.load.audio('boss_phase2', 'audio/boss_phase2.mp3');
     this.load.audio('boss_prediction', 'audio/boss_prediction.mp3');
@@ -45,6 +59,7 @@ export class BootScene extends Phaser.Scene {
     generateAllTextures(this);
     generatePixelCatRunner2(this);
 
+    // ⭐ Nori run animation
     if (!this.anims.exists('nori_run')) {
       this.anims.create({
         key: 'nori_run',
@@ -54,24 +69,36 @@ export class BootScene extends Phaser.Scene {
       });
     }
 
+    // Idle animations
     this.anims.create({
       key: 'nori-idle',
       frames: this.anims.generateFrameNumbers('nori-idle', { start: 0, end: 5 }),
       frameRate: 6,
-      repeat: -1
+      repeat: -1,
     });
 
     this.anims.create({
       key: 'uni-idle',
       frames: this.anims.generateFrameNumbers('uni-idle', { start: 0, end: 5 }),
       frameRate: 6,
-      repeat: -1
+      repeat: -1,
     });
 
-    // Wait for PixelFont to load so start/intro/game-over screens use it
+    // ⭐ Luna run animation (for obstacles)
+    if (!this.anims.exists('luna_run')) {
+      this.anims.create({
+        key: 'luna_run',
+        frames: this.anims.generateFrameNumbers('luna', { start: 0, end: 5 }),
+        frameRate: 10,
+        repeat: -1,
+      });
+    }
+
+    // Start intro scene after font loads
     const startScenes = (): void => {
       this.scene.start('StoryIntro');
     };
+
     if (typeof document !== 'undefined' && document.fonts && document.fonts.load) {
       document.fonts.load('16px PixelFont').then(startScenes).catch(startScenes);
     } else {
